@@ -194,6 +194,7 @@ export interface PublishVideoData {
     companyId: string;
     productId: string;
   } | null;
+  sponsorPayout?: number;
 }
 
 export interface OutsideWork {
@@ -586,6 +587,11 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     if (data.isPromoted) {
       setMoney(prev => prev - data.promotionCost);
+    }
+
+    if (data.sponsorPayout) {
+      const payout = data.sponsorPayout;
+      setMoney(prev => prev + payout);
     }
 
     setVideoHistory([newVideo, ...videoHistory]);

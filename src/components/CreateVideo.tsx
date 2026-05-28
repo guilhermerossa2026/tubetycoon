@@ -3,7 +3,16 @@ import { useGame } from '../context/GameContext';
 import { THUMBNAIL_DATABASE } from '../assets/thumbnailDatabase';
 
 const CreateVideo: React.FC = () => {
-  const { publishVideo, money, companies, subscribers } = useGame();
+  const { 
+    publishVideo, 
+    money, 
+    companies, 
+    subscribers, 
+    energy, 
+    outsideWorks, 
+    workOutside 
+  } = useGame();
+
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState<'vlog' | 'games' | 'pov' | 'challenge' | 'trend' | 'dance' | 'music'>('vlog');
   const [isPromoted, setIsPromoted] = useState(false);
@@ -124,14 +133,7 @@ const CreateVideo: React.FC = () => {
       ? { companyId: selectedCompanyId, productId: selectedProductId }
       : null;
 
-    if (adStrategy === 'sponsor') {
-      const payout = getSponsorPayout();
-      // Instantly inject sponsor cash in personal account PF
-      useGame().addViews(0); // Tick state updates
-      // The context handles AdSense and earnings, let's inject sponsor cash dynamically:
-      // Note: We can add to PF money immediately!
-      // In GameContext, setMoney is a standard react state, let's call a state change or let it update
-    }
+    const sponsorPayout = adStrategy === 'sponsor' ? getSponsorPayout() : undefined;
 
     publishVideo({
       title: title || 'Vídeo sem título',
@@ -139,24 +141,9 @@ const CreateVideo: React.FC = () => {
       thumbnail,
       isPromoted,
       promotionCost: PROMOTION_COST,
-      selfPromotion: selfPromotionObj
+      selfPromotion: selfPromotionObj,
+      sponsorPayout
     });
-
-    // Handle sponsor payout immediately on personal bank PF
-    if (adStrategy === 'sponsor') {
-      const payout = getSponsorPayout();
-      // Deduct or add directly via context
-      // Note: we can use a trick since the context provider exposes the value. But wait! The best way is to let GameContext process it or add it to PF immediately:
-      // In context we can handle sponsor payouts or do it directly. Let's make sure it adds to PF!
-      // Let's check how to invoke state. The publishVideo has promotionCost deduction.
-      // Wait, let's write a small custom handler for money or sponsor in Context if needed, but since we are inside React component we can let context update.
-      // Wait, in GameContext, did we add a function to add PF cash? No, but we can do it by invoking a transaction or just let nextWeek give it, or let's look at `injectPJCapital`.
-      // Let's check how we can inject PF money. Ah! We can do:
-      // We can just let the context update money by using publishVideo or adding it to nextWeek report events.
-      // Let's check: we can trigger it in context when publishing!
-      // Wait, let's add a small sponsorship payout to PF money during publishVideo!
-      // In GameContext.tsx we can update publishVideo to include sponsor payouts. Let's make sure it handles sponsors perfectly!
-    }
 
     // Reset form
     setTitle('');
@@ -171,42 +158,121 @@ const CreateVideo: React.FC = () => {
   return (
     <div className="tab-container create-studio scrollable-content">
       <div className="studio-layout">
-        <section className="preview-section">
-          <div className="thumb-preview" style={{ backgroundImage: `url(${thumbnail})` }}>
-            <div className="duration">10:05</div>
-            <button className="refresh-thumb" onClick={handleRandomThumb}>🔄</button>
-          </div>
-          <div className="meta-preview">
-            <div className="preview-title">{title || 'Título do seu vídeo...'}</div>
-            <div className="preview-channel">Seu Canal • 0 visualizações</div>
-          </div>
-        </section>
+        <div className="studio-sidebar">
+          {/* Authentic YouTube Player Card Preview */}
+          <section className="preview-section">
+            <div className="player-wrapper">
+              <div className="thumb-preview" style={{ backgroundImage: `url(${thumbnail})` }}>
+                <div className="player-overlay">
+                  <div className="play-button-overlay">
+                    <svg viewBox="0 0 24 24" fill="currentColor" className="play-svg">
+                      <path d="M8 5v14l11-7z" />
+                    </svg>
+                  </div>
+                </div>
+                <div className="duration">10:05</div>
+                <div className="play-progress-bar">
+                  <div className="play-progress-fill"></div>
+                </div>
+                <button className="refresh-thumb" onClick={handleRandomThumb} title="Trocar Thumbnail">
+                  🔄
+                </button>
+              </div>
+            </div>
+            <div className="meta-preview">
+              <div className="meta-brand">
+                <div className="mock-avatar">
+                  <span>S</span>
+                </div>
+                <div className="meta-text-details">
+                  <div className="preview-title" title={title || 'Título do seu vídeo...'}>
+                    {title || 'Título do seu vídeo...'}
+                  </div>
+                  <div className="preview-channel">Seu Canal • 0 visualizações • Agora mesmo</div>
+                </div>
+              </div>
+            </div>
+          </section>
 
+          {/* Jobs Sidebar ("O Corre") */}
+          <section className="outside-work-section">
+            <div className="section-header">
+              <h3>💸 Trabalhos Extras (O "Corre")</h3>
+              <p>Trabalhe por fora para cobrir despesas e expandir seu canal.</p>
+            </div>
+            
+            <div className="work-list">
+              {outsideWorks.map(work => {
+                const canAfford = energy >= work.energyCost;
+                const hasSubs = subscribers >= work.minSubs;
+                
+                return (
+                  <div key={work.id} className={`work-card ${!hasSubs ? 'locked' : ''} ${!canAfford && hasSubs ? 'no-energy' : ''}`}>
+                    <div className="work-details">
+                      <div className="work-header">
+                        <span className="work-name">{work.name}</span>
+                        {!hasSubs && (
+                          <span className="lock-badge">
+                            🔒 {work.minSubs >= 1000000 ? `${work.minSubs / 1000000}M` : `${work.minSubs / 1000}K`} subs
+                          </span>
+                        )}
+                      </div>
+                      <div className="work-stats">
+                        <span className="pay">+${work.pay}</span>
+                        <span className="energy-cost">⚡ {work.energyCost}</span>
+                      </div>
+                    </div>
+                    <button 
+                      className={`work-btn ${!canAfford || !hasSubs ? 'disabled' : 'active'}`}
+                      onClick={() => workOutside(work.id)}
+                      disabled={!canAfford || !hasSubs}
+                    >
+                      {hasSubs ? 'TRABALHAR' : 'BLOQUEADO'}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        </div>
+
+        {/* Video Creator Panel */}
         <section className="setup-section">
-          <h3>Configuração do Vídeo</h3>
+          <div className="setup-header">
+            <h3>🎬 Estúdio de Criação</h3>
+            <span className="studio-badge">PC Studio Mode</span>
+          </div>
           
+          {/* Title Input */}
           <div className="input-group">
-            <label>Título Atraente</label>
+            <div className="label-row">
+              <label>Título do Vídeo</label>
+              <span className={`char-counter ${title.length >= 90 ? 'danger' : title.length >= 70 ? 'warning' : ''}`}>
+                {title.length}/100
+              </span>
+            </div>
             <div className="title-input-wrapper">
               <input 
                 type="text" 
                 placeholder="Ex: TENTEI FAZER ISSO E DEU ERRADO!" 
                 value={title}
-                onChange={(e) => setTitle(e.target.value)}
+                onChange={(e) => setTitle(e.target.value.slice(0, 100))}
+                maxLength={100}
               />
               <button className="magic-title-btn" onClick={handleRandomTitle} title="Gerar título aleatório">
-                ✨
+                ✨ Sugerir
               </button>
             </div>
           </div>
 
+          {/* Categories Grid -> Modern YouTube Tags */}
           <div className="input-group">
-            <label>Estilo do Vídeo</label>
-            <div className="category-grid">
+            <label>Nicho / Estilo do Vídeo</label>
+            <div className="category-chips-flex">
               {CATEGORIES.map(cat => (
                 <button 
                   key={cat.id}
-                  className={`cat-btn ${category === cat.id ? 'active' : ''}`}
+                  className={`cat-chip-btn ${category === cat.id ? 'active' : ''}`}
                   onClick={() => setCategory(cat.id as any)}
                 >
                   <span className="icon">{cat.icon}</span>
@@ -216,36 +282,45 @@ const CreateVideo: React.FC = () => {
             </div>
           </div>
 
-          {/* New Advertiser & Promotion Strategy Section */}
+          {/* Monetization / Sponsorship Strategy cards */}
           <div className="input-group strategy-group">
-            <label>Estratégia Publicitária / Promoção</label>
+            <label>Estratégia de Monetização / Divulgação</label>
             <div className="strategy-options">
               <button 
                 type="button"
-                className={`strategy-btn ${adStrategy === 'organic' ? 'active' : ''}`}
+                className={`strategy-card ${adStrategy === 'organic' ? 'active' : ''}`}
                 onClick={() => setAdStrategy('organic')}
               >
-                🌱 Orgânico
-                <small>Padrão do Algoritmo</small>
+                <div className="strategy-badge green">🌱 ORGÂNICO</div>
+                <span className="strategy-title">Padrão do Algoritmo</span>
+                <span className="strategy-desc">Alcance integral do algoritmo, sem penalidades de engajamento.</span>
               </button>
               
               <button 
                 type="button"
-                className={`strategy-btn ${adStrategy === 'sponsor' ? 'active' : ''}`}
+                className={`strategy-card ${adStrategy === 'sponsor' ? 'active' : ''}`}
                 onClick={() => setAdStrategy('sponsor')}
               >
-                🤝 Patrocínio (Sponsor)
-                <small>Ganha +${getSponsorPayout()} PF | -5% Views</small>
+                <div className="strategy-badge gold">🤝 PATROCÍNIO</div>
+                <span className="strategy-title">Sponsor Payout</span>
+                <span className="strategy-desc">Ganha instantâneo <strong className="payout-highlight">+${getSponsorPayout()}</strong> na conta PF.</span>
+                <span className="strategy-penalty">-5% visualizações</span>
               </button>
 
               <button 
                 type="button"
-                className={`strategy-btn ${adStrategy === 'self_promo' ? 'active' : ''}`}
+                className={`strategy-card ${adStrategy === 'self_promo' ? 'active' : ''}`}
                 disabled={activeCompanies.length === 0}
                 onClick={() => setAdStrategy('self_promo')}
               >
-                👕 Divulgar Minha Marca
-                <small>{activeCompanies.length > 0 ? "Promove Produto | -10% Views" : "🔒 Requer Marca Fundada"}</small>
+                <div className="strategy-badge blue">👕 PROMOVER MARCA</div>
+                <span className="strategy-title">Merchandising PJ</span>
+                <span className="strategy-desc">
+                  {activeCompanies.length > 0 
+                    ? "Divulga seus produtos licenciados em estoque." 
+                    : "🔒 Requer empresa fundada."}
+                </span>
+                <span className="strategy-penalty">-10% visualizações</span>
               </button>
             </div>
           </div>
@@ -253,100 +328,80 @@ const CreateVideo: React.FC = () => {
           {/* Dynamic Self-Promotion Selectors */}
           {adStrategy === 'self_promo' && (
             <div className="self-promo-selectors anim-fade-in">
-              <div className="select-group">
-                <label>Selecione a Marca PJ</label>
-                <select 
-                  value={selectedCompanyId} 
-                  onChange={(e) => {
-                    setSelectedCompanyId(e.target.value);
-                    setSelectedProductId('');
-                  }}
-                  className="promo-select"
-                >
-                  <option value="">-- Escolha uma Empresa Fundada --</option>
-                  {activeCompanies.map(c => (
-                    <option key={c.id} value={c.id}>{c.name} ({c.niche.toUpperCase()})</option>
-                  ))}
-                </select>
-              </div>
-
-              {selectedCompanyId && (
-                <div className="select-group anim-fade-in">
-                  <label>Selecione o Produto em Estoque</label>
-                  <select 
-                    value={selectedProductId} 
-                    onChange={(e) => setSelectedProductId(e.target.value)}
-                    className="promo-select"
-                  >
-                    <option value="">-- Escolha um Produto para Divulgar --</option>
-                    {availableProducts.map(p => (
-                      <option key={p.id} value={p.id}>
-                        {p.emoji} {p.name} (Estoque: {p.stock} un. | Preço: ${p.price})
-                      </option>
-                    ))}
-                  </select>
+              <div className="promo-selectors-grid">
+                <div className="select-group">
+                  <label>Selecione a Marca PJ</label>
+                  <div className="select-wrapper">
+                    <select 
+                      value={selectedCompanyId} 
+                      onChange={(e) => {
+                        setSelectedCompanyId(e.target.value);
+                        setSelectedProductId('');
+                      }}
+                      className="promo-select"
+                    >
+                      <option value="">-- Escolha uma Empresa Fundada --</option>
+                      {activeCompanies.map(c => (
+                        <option key={c.id} value={c.id}>{c.name} ({c.niche.toUpperCase()})</option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
-              )}
+
+                {selectedCompanyId && (
+                  <div className="select-group anim-fade-in">
+                    <label>Selecione o Produto em Estoque</label>
+                    <div className="select-wrapper">
+                      <select 
+                        value={selectedProductId} 
+                        onChange={(e) => setSelectedProductId(e.target.value)}
+                        className="promo-select"
+                      >
+                        <option value="">-- Escolha um Produto para Divulgar --</option>
+                        {availableProducts.map(p => (
+                          <option key={p.id} value={p.id}>
+                            {p.emoji} {p.name} (Estoque: {p.stock} un. | Preço: ${p.price})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
+          {/* Google Ads promotion card with professional custom toggle switch */}
           <div className="promotion-card">
             <div className="promo-info">
+              <div className="promo-tag">GOOGLE ADS</div>
               <h4>Impulsionar Vídeo (Tráfego Pago)</h4>
-              <p>Invista em Google Ads para obter 3x mais alcance bruto.</p>
+              <p>Invista na campanha de Ads para triplicar (3x) o alcance base do algoritmo.</p>
             </div>
             <div className="promo-action">
               <span className="cost">${PROMOTION_COST}</span>
-              <button 
-                className={`toggle ${isPromoted ? 'active' : ''}`}
-                onClick={() => setIsPromoted(!isPromoted)}
-                disabled={money < PROMOTION_COST && !isPromoted}
-              >
-                {isPromoted ? 'ON' : 'OFF'}
-              </button>
+              <label className="switch">
+                <input 
+                  type="checkbox"
+                  checked={isPromoted}
+                  onChange={() => setIsPromoted(!isPromoted)}
+                  disabled={money < PROMOTION_COST && !isPromoted}
+                />
+                <span className="slider round"></span>
+              </label>
             </div>
           </div>
 
-          <button 
-            className="publish-big-btn" 
-            onClick={handlePublish}
-            disabled={adStrategy === 'self_promo' && (!selectedCompanyId || !selectedProductId)}
-          >
-            POSTAR VÍDEO AGORA
-          </button>
-        </section>
-
-        <section className="outside-work-section">
-          <div className="section-header">
-            <h3>💸 Trabalhos Extras (O "Corre")</h3>
-            <p>Gaste energia para ganhar dinheiro imediato e sobreviver no início.</p>
-          </div>
-          
-          <div className="work-list">
-            {useGame().outsideWorks.map(work => {
-              const { energy, subscribers, workOutside } = useGame();
-              const canAfford = energy >= work.energyCost;
-              const hasSubs = subscribers >= work.minSubs;
-              
-              return (
-                <div key={work.id} className={`work-card ${!hasSubs ? 'locked' : ''}`}>
-                  <div className="work-details">
-                    <span className="work-name">{work.name}</span>
-                    <div className="work-stats">
-                      <span className="pay">+${work.pay}</span>
-                      <span className="energy-cost">⚡ {work.energyCost}</span>
-                    </div>
-                  </div>
-                  <button 
-                    className={`work-btn ${!canAfford || !hasSubs ? 'disabled' : ''}`}
-                    onClick={() => workOutside(work.id)}
-                    disabled={!canAfford || !hasSubs}
-                  >
-                    {hasSubs ? 'TRABALHAR' : `🔒 ${work.minSubs / 1000}K subs`}
-                  </button>
-                </div>
-              );
-            })}
+          {/* Action button */}
+          <div className="publish-action-area">
+            <button 
+              className="publish-big-btn" 
+              onClick={handlePublish}
+              disabled={adStrategy === 'self_promo' && (!selectedCompanyId || !selectedProductId)}
+            >
+              <span className="btn-icon">📤</span>
+              <span className="btn-text">POSTAR VÍDEO AGORA</span>
+            </button>
           </div>
         </section>
       </div>
@@ -354,206 +409,729 @@ const CreateVideo: React.FC = () => {
       <style>{`
         .create-studio {
           padding: 20px;
-        }
-        .studio-layout {
           display: flex;
           flex-direction: column;
-          gap: 25px;
         }
+        .studio-layout {
+          max-width: 1200px;
+          width: 100%;
+          margin: 0 auto;
+          display: flex;
+          flex-direction: column;
+          gap: 20px;
+        }
+        @media (min-width: 950px) {
+          .studio-layout {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 25px;
+            align-items: start;
+          }
+          .studio-sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            position: sticky;
+            top: 10px;
+          }
+        }
+
+        /* --- PREVIEW SECTION --- */
         .preview-section {
-          background: #1a1a1a;
-          border-radius: 15px;
+          background: #181818;
+          border-radius: 12px;
           overflow: hidden;
-          border: 1px solid #333;
+          border: 1px solid #2d2d2d;
+          box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+          transition: all 0.3s ease;
+        }
+        .preview-section:hover {
+          border-color: #444;
+          box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+        }
+        .player-wrapper {
+          position: relative;
+          width: 100%;
+          aspect-ratio: 16/9;
+          overflow: hidden;
         }
         .thumb-preview {
           width: 100%;
-          aspect-ratio: 16/9;
+          height: 100%;
           background-size: cover;
           background-position: center;
           position: relative;
           display: flex;
           justify-content: flex-end;
           align-items: flex-end;
-          padding: 10px;
+          padding: 8px;
+          cursor: pointer;
+        }
+        .player-overlay {
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(0, 0, 0, 0.4);
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          opacity: 0;
+          transition: opacity 0.2s ease;
+        }
+        .thumb-preview:hover .player-overlay {
+          opacity: 1;
+        }
+        .play-button-overlay {
+          width: 50px;
+          height: 50px;
+          background: rgba(255, 255, 255, 0.2);
+          backdrop-filter: blur(8px);
+          border-radius: 50%;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          border: 1px solid rgba(255,255,255,0.4);
+          box-shadow: 0 0 15px rgba(0,0,0,0.5);
+          transform: scale(0.9);
+          transition: transform 0.2s ease;
+        }
+        .thumb-preview:hover .play-button-overlay {
+          transform: scale(1);
+        }
+        .play-svg {
+          width: 24px;
+          height: 24px;
+          color: white;
+          margin-left: 2px;
         }
         .duration {
-          background: rgba(0,0,0,0.8);
+          background: rgba(17, 17, 17, 0.85);
           color: white;
-          padding: 2px 6px;
+          padding: 3px 6px;
           border-radius: 4px;
-          font-size: 0.75rem;
+          font-size: 0.7rem;
           font-weight: bold;
+          letter-spacing: 0.5px;
+          margin-bottom: 4px;
+          z-index: 2;
+        }
+        .play-progress-bar {
+          position: absolute;
+          bottom: 0;
+          left: 0;
+          width: 100%;
+          height: 4px;
+          background: rgba(255, 255, 255, 0.2);
+          z-index: 2;
+        }
+        .play-progress-fill {
+          width: 45%;
+          height: 100%;
+          background: #ff0000;
+          box-shadow: 0 0 8px #ff0000;
         }
         .refresh-thumb {
           position: absolute;
           top: 10px;
           right: 10px;
-          background: rgba(0,0,0,0.6);
-          border: none;
+          background: rgba(24, 24, 24, 0.7);
+          backdrop-filter: blur(5px);
+          border: 1px solid #3d3d3d;
           color: white;
-          width: 35px;
-          height: 35px;
+          width: 32px;
+          height: 32px;
           border-radius: 50%;
           cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: all 0.2s ease;
+          z-index: 3;
+        }
+        .refresh-thumb:hover {
+          background: #ff3b30;
+          border-color: #ff3b30;
+          transform: rotate(180deg);
         }
         .meta-preview {
-          padding: 15px;
+          padding: 12px 15px;
+        }
+        .meta-brand {
+          display: flex;
+          gap: 10px;
+          align-items: flex-start;
+        }
+        .mock-avatar {
+          width: 36px;
+          height: 36px;
+          border-radius: 50%;
+          background: linear-gradient(135deg, #ff007f, #7f00ff);
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          color: white;
+          font-weight: bold;
+          font-size: 0.9rem;
+          flex-shrink: 0;
+          border: 1px solid rgba(255,255,255,0.1);
+        }
+        .meta-text-details {
+          flex: 1;
+          min-width: 0;
         }
         .preview-title {
-          font-weight: bold;
-          font-size: 1.1rem;
-          margin-bottom: 5px;
-          color: white;
+          font-weight: 600;
+          font-size: 0.95rem;
+          line-height: 1.35;
+          margin-bottom: 4px;
+          color: #fff;
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+          word-break: break-word;
         }
         .preview-channel {
-          font-size: 0.85rem;
+          font-size: 0.75rem;
           color: var(--text-dim);
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
         }
 
-        .setup-section h3, .outside-work-section h3 {
-          margin-top: 0;
-          margin-bottom: 12px;
-          color: var(--accent);
-          font-size: 1.2rem;
+        /* --- SETUP SECTION --- */
+        .setup-section {
+          background: #181818;
+          border: 1px solid #2d2d2d;
+          padding: 20px;
+          border-radius: 12px;
+          box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+          display: flex;
+          flex-direction: column;
+          gap: 20px;
         }
-        
-        .section-header p {
-          font-size: 0.85rem;
-          color: var(--text-dim);
-          margin-bottom: 20px;
+        .setup-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          border-bottom: 1px solid #2d2d2d;
+          padding-bottom: 12px;
+        }
+        .setup-header h3 {
+          margin: 0;
+          font-size: 1.15rem;
+          color: #fff;
+          font-weight: 600;
+        }
+        .studio-badge {
+          background: rgba(255, 0, 0, 0.1);
+          color: #ff3333;
+          border: 1px solid rgba(255, 0, 0, 0.2);
+          font-size: 0.65rem;
+          font-weight: bold;
+          padding: 3px 8px;
+          border-radius: 20px;
+          letter-spacing: 0.5px;
         }
 
         .input-group {
-          margin-bottom: 20px;
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+        }
+        .label-row {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
         }
         .input-group label {
-          display: block;
-          font-size: 0.85rem;
+          font-size: 0.8rem;
           color: var(--text-dim);
-          margin-bottom: 8px;
+          font-weight: 500;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
         }
-        .input-group input {
-          width: 100%;
-          background: #222;
-          border: 1px solid #444;
-          padding: 12px;
-          border-radius: 10px;
-          color: white;
-          font-size: 1rem;
+        .char-counter {
+          font-size: 0.7rem;
+          color: #888;
+        }
+        .char-counter.warning {
+          color: #ff9f0a;
+        }
+        .char-counter.danger {
+          color: #ff3b30;
+          font-weight: bold;
         }
 
         .title-input-wrapper {
           display: flex;
-          gap: 10px;
+          gap: 8px;
           align-items: center;
+        }
+        .input-group input {
+          flex: 1;
+          background: #111;
+          border: 1px solid #333;
+          padding: 10px 14px;
+          border-radius: 8px;
+          color: white;
+          font-size: 0.9rem;
+          transition: all 0.2s ease;
+        }
+        .input-group input:focus {
+          border-color: #ff3333;
+          box-shadow: 0 0 8px rgba(255, 51, 51, 0.15);
+          outline: none;
+          background: #161616;
         }
         .magic-title-btn {
-          background: #333;
-          border: 1px solid #444;
-          width: 45px;
-          height: 45px;
-          border-radius: 10px;
-          font-size: 1.2rem;
+          background: linear-gradient(135deg, #8a2be2 0%, #4b0082 100%);
+          border: 1px solid #7a1ee2;
+          color: white;
+          height: 38px;
+          padding: 0 16px;
+          border-radius: 8px;
+          font-size: 0.8rem;
+          font-weight: bold;
           cursor: pointer;
           display: flex;
           align-items: center;
-          justify-content: center;
-          transition: all 0.2s;
+          gap: 6px;
+          transition: all 0.2s ease;
+          box-shadow: 0 2px 8px rgba(138, 43, 226, 0.25);
+          white-space: nowrap;
         }
         .magic-title-btn:hover {
-          background: #444;
-          transform: rotate(15deg);
+          filter: brightness(1.15);
+          box-shadow: 0 4px 12px rgba(138, 43, 226, 0.4);
+          transform: translateY(-1px);
+        }
+        .magic-title-btn:active {
+          transform: translateY(1px);
         }
 
-        .category-grid {
-          display: grid;
-          grid-template-columns: repeat(4, 1fr);
+        /* --- CATEGORIES TAGS (CHIPS) --- */
+        .category-chips-flex {
+          display: flex;
+          flex-wrap: wrap;
           gap: 8px;
         }
-        .cat-btn {
-          background: #222;
-          border: 1px solid #444;
-          border-radius: 10px;
-          padding: 10px 5px;
+        .cat-chip-btn {
+          background: #1e1e1e;
+          border: 1px solid #333;
+          border-radius: 20px;
+          padding: 6px 14px;
           display: flex;
-          flex-direction: column;
           align-items: center;
-          gap: 5px;
-          color: #888;
-          transition: all 0.2s;
+          gap: 6px;
+          color: #aaa;
+          transition: all 0.2s ease;
+          font-size: 0.75rem;
+          font-weight: 500;
         }
-        .cat-btn.active {
-          background: var(--accent);
-          border-color: var(--accent);
+        .cat-chip-btn:hover {
+          background: #282828;
+          border-color: #555;
+          color: #fff;
+        }
+        .cat-chip-btn.active {
+          background: #ff0000;
+          border-color: #ff0000;
           color: white;
+          box-shadow: 0 2px 10px rgba(255, 0, 0, 0.3);
+          font-weight: bold;
         }
-        .cat-btn .icon { font-size: 1.2rem; }
-        .cat-btn .name { font-size: 0.7rem; font-weight: bold; }
+        .cat-chip-btn .icon {
+          font-size: 0.9rem;
+        }
 
-        /* Strategy Group Styles */
+        /* --- STRATEGY CARDS --- */
         .strategy-options {
           display: grid;
-          grid-template-columns: repeat(3, 1fr);
+          grid-template-columns: 1fr;
           gap: 10px;
         }
-        .strategy-btn {
-          background: #181818;
+        @media (min-width: 600px) {
+          .strategy-options {
+            grid-template-columns: repeat(3, 1fr);
+          }
+        }
+        .strategy-card {
+          background: #1f1f1f;
           border: 1px solid #333;
-          padding: 12px 6px;
-          border-radius: 8px;
+          padding: 15px;
+          border-radius: 10px;
           color: #eee;
-          font-weight: bold;
-          font-size: 0.85rem;
           display: flex;
           flex-direction: column;
+          align-items: flex-start;
+          text-align: left;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          position: relative;
+        }
+        .strategy-card:hover:not(:disabled) {
+          border-color: #555;
+          background: #252525;
+          transform: translateY(-2px);
+        }
+        .strategy-card.active {
+          border-color: #ff9f0a;
+          background: rgba(255, 159, 10, 0.05);
+          box-shadow: 0 0 12px rgba(255, 159, 10, 0.1);
+        }
+        .strategy-card.active::after {
+          content: '✓';
+          position: absolute;
+          top: 10px;
+          right: 10px;
+          background: #ff9f0a;
+          color: #111;
+          width: 16px;
+          height: 16px;
+          border-radius: 50%;
+          font-size: 0.65rem;
+          font-weight: bold;
+          display: flex;
           align-items: center;
           justify-content: center;
-          gap: 4px;
-          cursor: pointer;
-          transition: all 0.2s;
-          text-align: center;
         }
-        .strategy-btn small {
-          font-size: 0.65rem;
-          color: #888;
-          font-weight: normal;
-        }
-        .strategy-btn:hover:not(:disabled) {
-          border-color: #555;
-          background: #202020;
-        }
-        .strategy-btn.active {
-          border-color: #d4af37;
-          background: rgba(212, 175, 55, 0.1);
-        }
-        .strategy-btn:disabled {
-          opacity: 0.5;
+        .strategy-card:disabled {
+          opacity: 0.4;
           cursor: not-allowed;
         }
+        
+        .strategy-badge {
+          font-size: 0.6rem;
+          font-weight: bold;
+          padding: 2px 6px;
+          border-radius: 4px;
+          margin-bottom: 8px;
+          letter-spacing: 0.5px;
+        }
+        .strategy-badge.green { background: rgba(16, 185, 129, 0.1); color: #10b981; }
+        .strategy-badge.gold { background: rgba(255, 159, 10, 0.15); color: #ff9f0a; }
+        .strategy-badge.blue { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
 
-        /* Promo Selectors */
+        .strategy-title {
+          font-size: 0.85rem;
+          font-weight: 600;
+          margin-bottom: 6px;
+          color: white;
+        }
+        .strategy-desc {
+          font-size: 0.7rem;
+          color: #999;
+          line-height: 1.35;
+          margin-bottom: 8px;
+          flex-grow: 1;
+        }
+        .payout-highlight {
+          color: #ff9f0a;
+          font-weight: bold;
+        }
+        .strategy-penalty {
+          font-size: 0.65rem;
+          font-weight: bold;
+          color: #ff453a;
+          background: rgba(255, 69, 58, 0.1);
+          padding: 1px 5px;
+          border-radius: 3px;
+        }
+
+        /* --- SELF PROMO SELECTORS --- */
         .self-promo-selectors {
           background: rgba(255,255,255,0.02);
-          border: 1px dashed #333;
+          border: 1px dashed #3d3d3d;
           padding: 15px;
-          border-radius: 8px;
-          margin-bottom: 20px;
+          border-radius: 10px;
         }
-        .select-group {
-          margin-bottom: 12px;
+        .promo-selectors-grid {
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: 12px;
         }
-        .select-group:last-child {
-          margin-bottom: 0;
+        @media (min-width: 600px) {
+          .promo-selectors-grid {
+            grid-template-columns: 1fr 1fr;
+          }
+        }
+        .select-wrapper {
+          position: relative;
         }
         .promo-select {
           width: 100%;
-          padding: 12px;
+          padding: 10px;
           border-radius: 8px;
-          background: #1e1e1e;
-          border: 1px solid #444;
+          background: #111;
+          border: 1px solid #333;
           color: white;
+          font-size: 0.8rem;
+          appearance: none;
+          cursor: pointer;
+          outline: none;
+          transition: all 0.2s ease;
+        }
+        .promo-select:focus {
+          border-color: #3b82f6;
+          box-shadow: 0 0 8px rgba(59, 130, 246, 0.2);
+        }
+        .select-wrapper::after {
+          content: '▼';
+          font-size: 0.6rem;
+          color: #666;
+          position: absolute;
+          right: 12px;
+          top: 50%;
+          transform: translateY(-50%);
+          pointer-events: none;
+        }
+
+        /* --- PROMOTION (ADS) CARD --- */
+        .promotion-card {
+          background: linear-gradient(135deg, #1b263b 0%, #0d1b2a 100%);
+          border: 1px solid #233d4d;
+          padding: 15px 20px;
+          border-radius: 12px;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          box-shadow: 0 4px 12px rgba(13, 27, 42, 0.3);
+        }
+        .promo-info {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+        }
+        .promo-tag {
+          font-size: 0.6rem;
+          font-weight: 800;
+          color: #4cc9f0;
+          letter-spacing: 1px;
+        }
+        .promo-info h4 {
+          margin: 0;
           font-size: 0.9rem;
+          font-weight: bold;
+          color: white;
+        }
+        .promo-info p {
+          margin: 0;
+          font-size: 0.7rem;
+          color: #a5a5a5;
+          line-height: 1.35;
+        }
+        .promo-action {
+          display: flex;
+          align-items: center;
+          gap: 15px;
+        }
+        .promo-action .cost {
+          font-size: 1rem;
+          font-weight: 800;
+          color: #4caf50;
+        }
+
+        /* --- TOGGLE SWITCH --- */
+        .switch {
+          position: relative;
+          display: inline-block;
+          width: 44px;
+          height: 24px;
+        }
+        .switch input { 
+          opacity: 0;
+          width: 0;
+          height: 0;
+        }
+        .slider {
+          position: absolute;
+          cursor: pointer;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background-color: #333;
+          transition: .3s;
+          border: 1px solid #444;
+        }
+        .slider:before {
+          position: absolute;
+          content: "";
+          height: 16px;
+          width: 16px;
+          left: 3px;
+          bottom: 3px;
+          background-color: white;
+          transition: .3s;
+        }
+        input:checked + .slider {
+          background-color: #4caf50;
+          border-color: #4caf50;
+        }
+        input:focus + .slider {
+          box-shadow: 0 0 1px #4caf50;
+        }
+        input:checked + .slider:before {
+          transform: translateX(20px);
+        }
+        .slider.round {
+          border-radius: 34px;
+        }
+        .slider.round:before {
+          border-radius: 50%;
+        }
+
+        /* --- PUBLISH ACTION --- */
+        .publish-action-area {
+          display: flex;
+          justify-content: flex-end;
+          margin-top: 5px;
+        }
+        .publish-big-btn {
+          width: 100%;
+          background: linear-gradient(135deg, #ff0000 0%, #b30000 100%);
+          color: white;
+          border: none;
+          padding: 14px 24px;
+          border-radius: 10px;
+          font-weight: bold;
+          font-size: 0.95rem;
+          letter-spacing: 0.5px;
+          box-shadow: 0 4px 15px rgba(255,0,0,0.25);
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          transition: all 0.25s ease;
+        }
+        .publish-big-btn:hover:not(:disabled) {
+          filter: brightness(1.1);
+          transform: translateY(-2px);
+          box-shadow: 0 6px 20px rgba(255,0,0,0.4);
+        }
+        .publish-big-btn:active:not(:disabled) {
+          transform: translateY(0);
+        }
+        .publish-big-btn:disabled {
+          background: #252525;
+          border: 1px solid #333;
+          box-shadow: none;
+          cursor: not-allowed;
+          color: #555;
+        }
+
+        /* --- OUTSIDE WORK ("O CORRE") --- */
+        .outside-work-section {
+          background: #181818;
+          padding: 15px;
+          border-radius: 12px;
+          border: 1px solid #2d2d2d;
+          box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+        .outside-work-section .section-header h3 {
+          margin: 0;
+          font-size: 0.95rem;
+          font-weight: bold;
+          color: #fff;
+          margin-bottom: 4px;
+        }
+        .outside-work-section .section-header p {
+          font-size: 0.75rem;
+          color: var(--text-dim);
+          margin-bottom: 15px;
+        }
+        .work-list {
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+        }
+        .work-card {
+          background: #1f1f1f;
+          border: 1px solid #2a2a2a;
+          padding: 10px 12px;
+          border-radius: 8px;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          transition: all 0.2s ease;
+        }
+        .work-card:hover:not(.locked) {
+          border-color: #3d3d3d;
+          background: #232323;
+        }
+        .work-card.locked {
+          opacity: 0.45;
+          background: rgba(255,255,255,0.01);
+          border-style: dashed;
+        }
+        .work-card.no-energy {
+          border-color: rgba(255, 235, 59, 0.2);
+        }
+        .work-details {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+          min-width: 0;
+          flex-grow: 1;
+          margin-right: 10px;
+        }
+        .work-header {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+        }
+        .work-name {
+          font-weight: 600;
+          font-size: 0.8rem;
+          color: white;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+        .lock-badge {
+          font-size: 0.6rem;
+          background: rgba(0,0,0,0.4);
+          color: #aaa;
+          padding: 1px 4px;
+          border-radius: 3px;
+          font-weight: 500;
+          white-space: nowrap;
+        }
+        .work-stats {
+          display: flex;
+          gap: 10px;
+          font-size: 0.75rem;
+        }
+        .pay { color: #10b981; font-weight: bold; }
+        .energy-cost { color: #ffeb3b; font-weight: 600; }
+        
+        .work-btn {
+          background: #2d2d2d;
+          border: 1px solid #3d3d3d;
+          color: #ddd;
+          padding: 6px 12px;
+          border-radius: 6px;
+          font-size: 0.7rem;
+          font-weight: bold;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          white-space: nowrap;
+        }
+        .work-btn:hover:not(.disabled) {
+          background: #ff3b30;
+          border-color: #ff3b30;
+          color: white;
+          box-shadow: 0 0 8px rgba(255, 59, 48, 0.3);
+        }
+        .work-btn.disabled {
+          background: #151515;
+          border-color: #222;
+          color: #444;
+          cursor: not-allowed;
         }
 
         .anim-fade-in {
@@ -562,119 +1140,6 @@ const CreateVideo: React.FC = () => {
         @keyframes fadeIn {
           from { opacity: 0; transform: translateY(5px); }
           to { opacity: 1; transform: translateY(0); }
-        }
-
-        .promotion-card {
-          background: #1a1a1a;
-          border: 1px solid #444;
-          padding: 15px;
-          border-radius: 12px;
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 25px;
-        }
-        .promo-info h4 { margin: 0; font-size: 0.95rem; }
-        .promo-info p { margin: 4px 0 0; font-size: 0.75rem; color: var(--text-dim); }
-        .promo-action {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 5px;
-        }
-        .promo-action .cost { font-size: 0.9rem; font-weight: bold; color: #4caf50; }
-        .toggle {
-          background: #333;
-          color: white;
-          border-radius: 20px;
-          padding: 4px 15px;
-          font-size: 0.75rem;
-          font-weight: bold;
-          cursor: pointer;
-        }
-        .toggle.active { background: #4caf50; }
-
-        .publish-big-btn {
-          width: 100%;
-          background: var(--accent);
-          color: white;
-          border: none;
-          padding: 18px;
-          border-radius: 12px;
-          font-weight: bold;
-          font-size: 1.1rem;
-          letter-spacing: 1px;
-          box-shadow: 0 4px 15px rgba(255,0,0,0.3);
-          cursor: pointer;
-          transition: all 0.2s;
-        }
-        .publish-big-btn:active { transform: scale(0.98); }
-        .publish-big-btn:disabled {
-          background: #333;
-          box-shadow: none;
-          cursor: not-allowed;
-          color: #666;
-        }
-
-        .outside-work-section {
-          background: rgba(255, 255, 255, 0.03);
-          padding: 20px;
-          border-radius: 15px;
-          border: 1px dashed #444;
-          margin-bottom: 50px;
-        }
-        .work-list {
-          display: flex;
-          flex-direction: column;
-          gap: 12px;
-        }
-        .work-card {
-          background: #222;
-          border: 1px solid #333;
-          padding: 15px;
-          border-radius: 10px;
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-        }
-        .work-card.locked {
-          opacity: 0.6;
-        }
-        .work-details {
-          display: flex;
-          flex-direction: column;
-          gap: 5px;
-        }
-        .work-name {
-          font-weight: bold;
-          font-size: 0.95rem;
-        }
-        .work-stats {
-          display: flex;
-          gap: 12px;
-          font-size: 0.8rem;
-        }
-        .pay { color: #4caf50; font-weight: bold; }
-        .energy-cost { color: #ffeb3b; }
-        .work-btn {
-          background: #333;
-          color: white;
-          padding: 8px 15px;
-          border-radius: 6px;
-          font-size: 0.8rem;
-          font-weight: bold;
-          cursor: pointer;
-        }
-        .work-btn:not(.disabled) {
-          background: #444;
-          color: #fff;
-        }
-        .work-btn:hover:not(.disabled) {
-          background: #555;
-        }
-        .work-btn.disabled {
-          color: #666;
-          cursor: not-allowed;
         }
       `}</style>
     </div>
