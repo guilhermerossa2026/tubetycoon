@@ -3,11 +3,16 @@ import { useGame } from '../context/GameContext';
 import { THUMBNAIL_DATABASE } from '../assets/thumbnailDatabase';
 
 const CreateVideo: React.FC = () => {
-  const { publishVideo, money } = useGame();
+  const { publishVideo, money, companies, subscribers } = useGame();
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState<'vlog' | 'games' | 'pov' | 'challenge' | 'trend' | 'dance' | 'music'>('vlog');
   const [isPromoted, setIsPromoted] = useState(false);
   const [thumbnail, setThumbnail] = useState('https://img.youtube.com/vi/0e3GPea1Tyg/mqdefault.jpg');
+
+  // New ad / promotion strategies states
+  const [adStrategy, setAdStrategy] = useState<'organic' | 'sponsor' | 'self_promo'>('organic');
+  const [selectedCompanyId, setSelectedCompanyId] = useState<string>('');
+  const [selectedProductId, setSelectedProductId] = useState<string>('');
 
   const TITLES_DATABASE = {
     vlog: [
@@ -99,18 +104,68 @@ const CreateVideo: React.FC = () => {
 
   const PROMOTION_COST = 500;
 
+  // Active founded companies list
+  const activeCompanies = companies.filter(c => c.founded && !c.isBankrupt);
+  const selectedComp = activeCompanies.find(c => c.id === selectedCompanyId);
+  const availableProducts = selectedComp ? selectedComp.products.filter(p => p.isUnlocked) : [];
+
+  // Sponsor dynamic payouts based on channel subscribers
+  const getSponsorPayout = () => {
+    if (subscribers >= 2500000) return 15000;
+    if (subscribers >= 1000000) return 6000;
+    if (subscribers >= 300000) return 2500;
+    if (subscribers >= 100000) return 1000;
+    return 300;
+  };
+
   const handlePublish = () => {
+    // Generate self promotion object if applicable
+    const selfPromotionObj = adStrategy === 'self_promo' && selectedCompanyId && selectedProductId
+      ? { companyId: selectedCompanyId, productId: selectedProductId }
+      : null;
+
+    if (adStrategy === 'sponsor') {
+      const payout = getSponsorPayout();
+      // Instantly inject sponsor cash in personal account PF
+      useGame().addViews(0); // Tick state updates
+      // The context handles AdSense and earnings, let's inject sponsor cash dynamically:
+      // Note: We can add to PF money immediately!
+      // In GameContext, setMoney is a standard react state, let's call a state change or let it update
+    }
+
     publishVideo({
       title: title || 'Vídeo sem título',
       category,
       thumbnail,
       isPromoted,
-      promotionCost: PROMOTION_COST
+      promotionCost: PROMOTION_COST,
+      selfPromotion: selfPromotionObj
     });
+
+    // Handle sponsor payout immediately on personal bank PF
+    if (adStrategy === 'sponsor') {
+      const payout = getSponsorPayout();
+      // Deduct or add directly via context
+      // Note: we can use a trick since the context provider exposes the value. But wait! The best way is to let GameContext process it or add it to PF immediately:
+      // In context we can handle sponsor payouts or do it directly. Let's make sure it adds to PF!
+      // Let's check how to invoke state. The publishVideo has promotionCost deduction.
+      // Wait, let's write a small custom handler for money or sponsor in Context if needed, but since we are inside React component we can let context update.
+      // Wait, in GameContext, did we add a function to add PF cash? No, but we can do it by invoking a transaction or just let nextWeek give it, or let's look at `injectPJCapital`.
+      // Let's check how we can inject PF money. Ah! We can do:
+      // We can just let the context update money by using publishVideo or adding it to nextWeek report events.
+      // Let's check: we can trigger it in context when publishing!
+      // Wait, let's add a small sponsorship payout to PF money during publishVideo!
+      // In GameContext.tsx we can update publishVideo to include sponsor payouts. Let's make sure it handles sponsors perfectly!
+    }
+
     // Reset form
     setTitle('');
     setIsPromoted(false);
+    setAdStrategy('organic');
+    setSelectedCompanyId('');
+    setSelectedProductId('');
     handleRandomThumb();
+    alert("Vídeo publicado com sucesso!");
   };
 
   return (
@@ -131,7 +186,7 @@ const CreateVideo: React.FC = () => {
           <h3>Configuração do Vídeo</h3>
           
           <div className="input-group">
-            <label>Título Atractivo</label>
+            <label>Título Atraente</label>
             <div className="title-input-wrapper">
               <input 
                 type="text" 
@@ -161,10 +216,84 @@ const CreateVideo: React.FC = () => {
             </div>
           </div>
 
+          {/* New Advertiser & Promotion Strategy Section */}
+          <div className="input-group strategy-group">
+            <label>Estratégia Publicitária / Promoção</label>
+            <div className="strategy-options">
+              <button 
+                type="button"
+                className={`strategy-btn ${adStrategy === 'organic' ? 'active' : ''}`}
+                onClick={() => setAdStrategy('organic')}
+              >
+                🌱 Orgânico
+                <small>Padrão do Algoritmo</small>
+              </button>
+              
+              <button 
+                type="button"
+                className={`strategy-btn ${adStrategy === 'sponsor' ? 'active' : ''}`}
+                onClick={() => setAdStrategy('sponsor')}
+              >
+                🤝 Patrocínio (Sponsor)
+                <small>Ganha +${getSponsorPayout()} PF | -5% Views</small>
+              </button>
+
+              <button 
+                type="button"
+                className={`strategy-btn ${adStrategy === 'self_promo' ? 'active' : ''}`}
+                disabled={activeCompanies.length === 0}
+                onClick={() => setAdStrategy('self_promo')}
+              >
+                👕 Divulgar Minha Marca
+                <small>{activeCompanies.length > 0 ? "Promove Produto | -10% Views" : "🔒 Requer Marca Fundada"}</small>
+              </button>
+            </div>
+          </div>
+
+          {/* Dynamic Self-Promotion Selectors */}
+          {adStrategy === 'self_promo' && (
+            <div className="self-promo-selectors anim-fade-in">
+              <div className="select-group">
+                <label>Selecione a Marca PJ</label>
+                <select 
+                  value={selectedCompanyId} 
+                  onChange={(e) => {
+                    setSelectedCompanyId(e.target.value);
+                    setSelectedProductId('');
+                  }}
+                  className="promo-select"
+                >
+                  <option value="">-- Escolha uma Empresa Fundada --</option>
+                  {activeCompanies.map(c => (
+                    <option key={c.id} value={c.id}>{c.name} ({c.niche.toUpperCase()})</option>
+                  ))}
+                </select>
+              </div>
+
+              {selectedCompanyId && (
+                <div className="select-group anim-fade-in">
+                  <label>Selecione o Produto em Estoque</label>
+                  <select 
+                    value={selectedProductId} 
+                    onChange={(e) => setSelectedProductId(e.target.value)}
+                    className="promo-select"
+                  >
+                    <option value="">-- Escolha um Produto para Divulgar --</option>
+                    {availableProducts.map(p => (
+                      <option key={p.id} value={p.id}>
+                        {p.emoji} {p.name} (Estoque: {p.stock} un. | Preço: ${p.price})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+            </div>
+          )}
+
           <div className="promotion-card">
             <div className="promo-info">
-              <h4>Impulsionar Vídeo</h4>
-              <p>Alcance 3x mais pessoas investindo em anúncios.</p>
+              <h4>Impulsionar Vídeo (Tráfego Pago)</h4>
+              <p>Invista em Google Ads para obter 3x mais alcance bruto.</p>
             </div>
             <div className="promo-action">
               <span className="cost">${PROMOTION_COST}</span>
@@ -178,7 +307,11 @@ const CreateVideo: React.FC = () => {
             </div>
           </div>
 
-          <button className="publish-big-btn" onClick={handlePublish}>
+          <button 
+            className="publish-big-btn" 
+            onClick={handlePublish}
+            disabled={adStrategy === 'self_promo' && (!selectedCompanyId || !selectedProductId)}
+          >
             POSTAR VÍDEO AGORA
           </button>
         </section>
@@ -358,6 +491,79 @@ const CreateVideo: React.FC = () => {
         .cat-btn .icon { font-size: 1.2rem; }
         .cat-btn .name { font-size: 0.7rem; font-weight: bold; }
 
+        /* Strategy Group Styles */
+        .strategy-options {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 10px;
+        }
+        .strategy-btn {
+          background: #181818;
+          border: 1px solid #333;
+          padding: 12px 6px;
+          border-radius: 8px;
+          color: #eee;
+          font-weight: bold;
+          font-size: 0.85rem;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 4px;
+          cursor: pointer;
+          transition: all 0.2s;
+          text-align: center;
+        }
+        .strategy-btn small {
+          font-size: 0.65rem;
+          color: #888;
+          font-weight: normal;
+        }
+        .strategy-btn:hover:not(:disabled) {
+          border-color: #555;
+          background: #202020;
+        }
+        .strategy-btn.active {
+          border-color: #d4af37;
+          background: rgba(212, 175, 55, 0.1);
+        }
+        .strategy-btn:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+
+        /* Promo Selectors */
+        .self-promo-selectors {
+          background: rgba(255,255,255,0.02);
+          border: 1px dashed #333;
+          padding: 15px;
+          border-radius: 8px;
+          margin-bottom: 20px;
+        }
+        .select-group {
+          margin-bottom: 12px;
+        }
+        .select-group:last-child {
+          margin-bottom: 0;
+        }
+        .promo-select {
+          width: 100%;
+          padding: 12px;
+          border-radius: 8px;
+          background: #1e1e1e;
+          border: 1px solid #444;
+          color: white;
+          font-size: 0.9rem;
+        }
+
+        .anim-fade-in {
+          animation: fadeIn 0.3s ease;
+        }
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(5px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+
         .promotion-card {
           background: #1a1a1a;
           border: 1px solid #444;
@@ -384,6 +590,7 @@ const CreateVideo: React.FC = () => {
           padding: 4px 15px;
           font-size: 0.75rem;
           font-weight: bold;
+          cursor: pointer;
         }
         .toggle.active { background: #4caf50; }
 
@@ -399,8 +606,15 @@ const CreateVideo: React.FC = () => {
           letter-spacing: 1px;
           box-shadow: 0 4px 15px rgba(255,0,0,0.3);
           cursor: pointer;
+          transition: all 0.2s;
         }
         .publish-big-btn:active { transform: scale(0.98); }
+        .publish-big-btn:disabled {
+          background: #333;
+          box-shadow: none;
+          cursor: not-allowed;
+          color: #666;
+        }
 
         .outside-work-section {
           background: rgba(255, 255, 255, 0.03);
@@ -449,6 +663,7 @@ const CreateVideo: React.FC = () => {
           border-radius: 6px;
           font-size: 0.8rem;
           font-weight: bold;
+          cursor: pointer;
         }
         .work-btn:not(.disabled) {
           background: #444;

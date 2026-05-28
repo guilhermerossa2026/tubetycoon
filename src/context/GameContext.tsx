@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
-interface Upgrade {
+// --- TS INTERFACES ---
+
+export interface Upgrade {
   id: string;
   name: string;
   basePrice: number;
@@ -9,7 +11,7 @@ interface Upgrade {
   level: number;
 }
 
-interface Housing {
+export interface Housing {
   id: string;
   name: string;
   entryCost: number;
@@ -17,10 +19,10 @@ interface Housing {
   viewMultiplier: number;
   energyBonus: number;
   description: string;
-  minCompanyLevel?: boolean; // Se libera a empresa
+  minCompanyLevel?: boolean;
 }
 
-interface Video {
+export interface Video {
   id: string;
   title: string;
   category: 'vlog' | 'games' | 'pov' | 'challenge' | 'trend' | 'dance' | 'music';
@@ -34,9 +36,13 @@ interface Video {
   isPromoted: boolean;
   date: number;
   weeksActive: number;
+  selfPromotion?: {
+    companyId: string;
+    productId: string;
+  } | null;
 }
 
-interface Investment {
+export interface Investment {
   id: string;
   name: string;
   symbol: string;
@@ -46,7 +52,23 @@ interface Investment {
   owned: number;
 }
 
-interface Talent {
+export interface Contract {
+  commissionPercent: number; // 0.1 to 0.5
+  monthsRemaining: number;
+  exclusivity: boolean;
+  terminationFine: number;
+}
+
+export interface Brand {
+  id: string;
+  name: string;
+  type: 'merch' | 'food' | 'tech';
+  level: number;
+  baseIncome: number;
+  synergy: number;
+}
+
+export interface Talent {
   id: string;
   name: string;
   niche: 'gaming' | 'lifestyle' | 'tech' | 'asmr' | 'beauty' | 'finance';
@@ -64,55 +86,162 @@ interface Talent {
   brands: Brand[];
 }
 
-interface Brand {
-  id: string;
-  name: string;
-  type: 'merch' | 'food' | 'tech';
-  level: number;
-  baseIncome: number;
-  synergy: number; // 0 to 1.5
-}
-
-interface Contract {
-  commissionPercent: number; // 0.1 to 0.5
-  monthsRemaining: number; // usually 6 to 24
-  exclusivity: boolean;
-  terminationFine: number;
-}
-
-interface StaffMember {
-  id: string;
-  name: string;
-  role: 'editor' | 'manager' | 'analyst';
-  salary: number;
-}
-
-interface AgencyState {
+export interface AgencyState {
   exists: boolean;
   name: string;
   level: number;
   reputation: number;
   specialization: 'none' | 'gaming' | 'lifestyle' | 'premium';
   talents: Talent[];
-  staff: StaffMember[];
-  monthlyExpenses: number;
 }
 
-interface WeeklyReport {
+export interface Loan {
+  amount: number;
+  remainingWeeks: number;
+  weeklyPayment: number;
+  totalToPay: number;
+  interestRate: number;
+}
+
+export interface ProductState {
+  id: string;
+  name: string;
+  category: string;
+  insumoCost: number;
+  price: number;
+  stock: number;
+  emoji: string;
+  isUnlocked: boolean;
+  totalSales: number;
+  weeklySales: number;
+  creatorCollab: string | null;
+  collabRoyalties: number;
+}
+
+export interface ProductLicense {
+  id: string;
+  name: string;
+  cost: number;
+  productIds: string[];
+  isUnlocked: boolean;
+}
+
+export interface CompanyState {
+  id: 'merch' | 'candy' | 'food' | 'tech';
+  name: string;
+  niche: 'merch' | 'candy' | 'food' | 'tech';
+  founded: boolean;
+  money: number;
+  weeklyMaintenance: number;
+  taxRegime: 'real' | 'simples';
+  licenses: ProductLicense[];
+  products: ProductState[];
+  weeklyNegativeCount: number; // 0 to 4
+  isBankrupt: boolean;
+  totalRevenue: number; // Historical gross revenue
+  activeInstallments: number; // For consolidated debt
+  installmentValue: number;
+  creditScore: number; // 300 to 1000
+  maxLoanLimit: number;
+  activeLoan: Loan | null;
+  web3PayEnabled: boolean;
+  marketingCampaignCooldown: number;
+  marketingActive: 'none' | 'instagram' | 'live' | 'dedicated';
+  marketingWeeksRemaining: number;
+}
+
+export interface CryptoTokenState {
+  name: string;
+  symbol: string;
+  price: number;
+  previousPrice: number;
+  totalSupply: number;
+  treasuryOwnedPercent: number; // 0 to 100
+  dailyVolume: number;
+  hypeMultiplier: number;
+}
+
+export interface DREItem {
+  name: string;
+  revenue: number;
+  costs: number;
+  taxes: number;
+  netProfit: number;
+  color: string;
+}
+
+export interface WeeklyReport {
   views: number;
   subscribers: number;
   youtubeEarnings: number;
-  companyEarnings: number;
+  companyEarnings: number; // Sum of PJ net profits
   investmentChange: number;
   expenses: number;
   housingExpenses: number;
   netTotal: number;
   isVisible: boolean;
   events: { title: string; desc: string; type: 'positive' | 'negative' | 'neutral' }[];
+  dreData: DREItem[];
 }
 
-interface GameState {
-  money: number;
+export interface PublishVideoData {
+  title: string;
+  category: Video['category'];
+  thumbnail: string;
+  isPromoted: boolean;
+  promotionCost: number;
+  selfPromotion?: {
+    companyId: string;
+    productId: string;
+  } | null;
+}
+
+export interface OutsideWork {
+  id: string;
+  name: string;
+  pay: number;
+  energyCost: number;
+  minSubs: number;
+}
+
+export interface GameContextType extends GameState {
+  date: string;
+  addViews: (amount: number) => void;
+  publishVideo: (data: PublishVideoData) => void;
+  buyUpgrade: (id: string) => void;
+  buyHousing: (id: string) => void;
+  workOutside: (id: string) => void;
+  buyInvestment: (id: string, amount: number) => void;
+  sellInvestment: (id: string, amount: number) => void;
+  createAgency: (name: string) => void;
+  hireTalent: (talent: Talent) => void;
+  fireTalent: (talentId: string) => void;
+  nextWeek: () => void;
+  closeReport: () => void;
+  housings: Housing[];
+  outsideWorks: OutsideWork[];
+  
+  // PJ Holdings & Web3 Operations
+  foundCompany: (niche: 'merch' | 'candy' | 'food' | 'tech', name: string, taxRegime: 'real' | 'simples') => void;
+  buyLicense: (companyId: string, licenseId: string) => void;
+  buyStock: (companyId: string, productId: string, batchSize: number) => void;
+  injectPJCapital: (companyId: string, amount: number) => void;
+  withdrawPJDividends: (companyId: string, amount: number) => void;
+  consolidatePJDebt: (companyId: string) => void;
+  takePJLoan: (companyId: string, amount: number, weeks: number) => void;
+  payPJLoan: (companyId: string) => void;
+  setPJProductPrice: (companyId: string, productId: string, price: number, customName?: string) => void;
+  launchCryptoToken: (name: string, symbol: string) => void;
+  vestCryptoTreasury: (percent: number, destination: 'PF' | 'PJ', companyId?: string) => void;
+  toggleCryptoPayment: (companyId: string) => void;
+  buybackBankruptCompany: (companyId: string) => void;
+  startMarketingCampaign: (companyId: string, campaignType: 'instagram' | 'live' | 'dedicated') => void;
+  signCreatorCollab: (companyId: string, creatorName: string) => void;
+  negotiateAgencyContract: (talent: Talent, commission: number, signingFee: number) => void;
+}
+
+export interface GameState {
+  money: number; // PF Cash
   subscribers: number;
   totalViews: number;
   energy: number;
@@ -129,44 +258,134 @@ interface GameState {
     subGainRate: number;
     moneyPerView: number;
   };
+  companies: CompanyState[];
+  totalTaxesPaid: number;
+  cryptoToken: CryptoTokenState | null;
 }
 
-interface PublishVideoData {
-  title: string;
-  category: Video['category'];
-  thumbnail: string;
-  isPromoted: boolean;
-  promotionCost: number;
-}
+// --- STATIC CONFIGURATIONS ---
 
-interface OutsideWork {
-  id: string;
-  name: string;
-  pay: number;
-  energyCost: number;
-  minSubs: number;
-}
+export const COMPANY_SCHEMES = {
+  merch: {
+    nicheName: "Grife de Roupas",
+    foundationCost: 50000,
+    maintenance: 500,
+    unlockedAtSubs: 100000,
+    licenses: [
+      {
+        id: 'accessories',
+        name: 'Licença de Acessórios Urbanos',
+        cost: 15000,
+        products: [
+          { id: 'bone', name: 'Boné do Canal', insumoCost: 2.00, price: 19.99, emoji: '🧢' },
+          { id: 'meias', name: 'Meias Estampadas Hype', insumoCost: 1.00, price: 9.99, emoji: '🧦' }
+        ]
+      },
+      {
+        id: 'premium_wear',
+        name: 'Licença de Vestuário Premium',
+        cost: 35000,
+        products: [
+          { id: 'moletom', name: 'Moletom Canguru Premium', insumoCost: 8.00, price: 59.99, emoji: '🧥' },
+          { id: 'jaqueta', name: 'Jaqueta Corta-Vento Creator', insumoCost: 12.00, price: 89.99, emoji: '🧥' }
+        ]
+      }
+    ],
+    basicProduct: { id: 'camiseta', name: 'Camiseta Básica do Canal', insumoCost: 3.00, price: 24.99, emoji: '👕' }
+  },
+  candy: {
+    nicheName: "Fábrica de Doces",
+    foundationCost: 250000,
+    maintenance: 1500,
+    unlockedAtSubs: 300000,
+    licenses: [
+      {
+        id: 'trufas',
+        name: 'Licença de Trufas e Bombons',
+        cost: 30000,
+        products: [
+          { id: 'bombom', name: 'Caixa de Bombons Finos', insumoCost: 3.00, price: 14.99, emoji: '🍬' },
+          { id: 'trufa', name: 'Trufa Cremosa de Avelã', insumoCost: 0.80, price: 2.99, emoji: '🍭' }
+        ]
+      },
+      {
+        id: 'viral_candy',
+        name: 'Licença de Doces Virais e Especiais',
+        cost: 70000,
+        products: [
+          { id: 'pirulito', name: 'Pirulito Gigante Neon', insumoCost: 1.00, price: 5.99, emoji: '🍭' },
+          { id: 'tripla_barra', name: 'Barra de Chocolate Tripla', insumoCost: 2.50, price: 11.99, emoji: '🍫' }
+        ]
+      }
+    ],
+    basicProduct: { id: 'barra_classica', name: 'Barra de Chocolate Clássica', insumoCost: 1.50, price: 4.99, emoji: '🍫' }
+  },
+  food: {
+    nicheName: "Rede de Fast Food",
+    foundationCost: 500000,
+    maintenance: 5000,
+    unlockedAtSubs: 1000000,
+    licenses: [
+      {
+        id: 'sides',
+        name: 'Licença de Acompanhamentos e Bebidas',
+        cost: 50000,
+        products: [
+          { id: 'fritas', name: 'Batata Frita Mega Crocante', insumoCost: 1.50, price: 7.99, emoji: '🍟' },
+          { id: 'milkshake', name: 'Milkshake Turbinado', insumoCost: 2.00, price: 9.99, emoji: '🥤' }
+        ]
+      },
+      {
+        id: 'giga_burgers',
+        name: 'Licença de Giga Burgers Premium',
+        cost: 120000,
+        products: [
+          { id: 'triplo_cheddar', name: 'Triplo Cheddar Bacon', insumoCost: 7.50, price: 24.99, emoji: '🍔' },
+          { id: 'balde_frango', name: 'Balde de Frango Frito', insumoCost: 8.00, price: 29.99, emoji: '🍗' }
+        ]
+      }
+    ],
+    basicProduct: { id: 'cheeseburger', name: 'Cheeseburger Clássico', insumoCost: 4.00, price: 14.99, emoji: '🍔' }
+  },
+  tech: {
+    nicheName: "Periféricos Gamer",
+    foundationCost: 2000000,
+    maintenance: 15000,
+    unlockedAtSubs: 2500000,
+    licenses: [
+      {
+        id: 'rgb_input',
+        name: 'Licença de Teclados e Mouses RGB',
+        cost: 250000,
+        products: [
+          { id: 'mouse_rgb', name: 'Mouse Gamer RGB Óptico', insumoCost: 15.00, price: 69.99, emoji: '🖱️' },
+          { id: 'teclado_compacto', name: 'Teclado Mecânico Compacto', insumoCost: 25.00, price: 119.99, emoji: '⌨️' }
+        ]
+      },
+      {
+        id: 'audio_comfort',
+        name: 'Licença de Som & Conforto Pro',
+        cost: 600000,
+        products: [
+          { id: 'headset_surround', name: 'Headset Gamer Surround 7.1', insumoCost: 45.00, price: 199.99, emoji: '🎧' },
+          { id: 'cadeira_ergo', name: 'Cadeira Gamer Ergonômica Pro', insumoCost: 90.00, price: 399.99, emoji: '💺' }
+        ]
+      }
+    ],
+    basicProduct: { id: 'mousepad', name: 'Mousepad Gamer Antiderrapante', insumoCost: 5.00, price: 19.99, emoji: '⬜' }
+  }
+};
 
-interface GameContextType extends GameState {
-  date: string;
-  addViews: (amount: number) => void;
-  publishVideo: (data: PublishVideoData) => void;
-  buyUpgrade: (id: string) => void;
-  buyHousing: (id: string) => void;
-  workOutside: (id: string) => void;
-  buyInvestment: (id: string, amount: number) => void;
-  sellInvestment: (id: string, amount: number) => void;
-  createAgency: (name: string) => void;
-  hireTalent: (talent: Talent) => void;
-  fireTalent: (talentId: string) => void;
-  hireStaff: (role: 'editor' | 'manager' | 'analyst') => void;
-  launchBrand: (talentId: string, brandName: string, type: Brand['type']) => void;
-  upgradeTalentBrand: (talentId: string, brandId: string) => void;
-  nextWeek: () => void;
-  closeReport: () => void;
-  housings: Housing[];
-  outsideWorks: OutsideWork[];
-}
+export const FAMOUS_CREATORS = [
+  { name: "Felipe Neto", tier: 'S' as const, upfrontCost: 1000000, royaltyRate: 0.25, minRoyalty: 0.15, emoji: "🦉" },
+  { name: "Alanzoka", tier: 'S' as const, upfrontCost: 850000, royaltyRate: 0.22, minRoyalty: 0.14, emoji: "🎮" },
+  { name: "Casimiro", tier: 'A' as const, upfrontCost: 500000, royaltyRate: 0.20, minRoyalty: 0.12, emoji: "🍔" },
+  { name: "Lofi Girl", tier: 'A' as const, upfrontCost: 350000, royaltyRate: 0.18, minRoyalty: 0.10, emoji: "🎧" },
+  { name: "Windersson", tier: 'B' as const, upfrontCost: 180000, royaltyRate: 0.14, minRoyalty: 0.08, emoji: "🥊" },
+  { name: "Cellbit", tier: 'B' as const, upfrontCost: 120000, royaltyRate: 0.12, minRoyalty: 0.06, emoji: "🔍" },
+  { name: "Gaules", tier: 'C' as const, upfrontCost: 40000, royaltyRate: 0.09, minRoyalty: 0.05, emoji: "tribo" },
+  { name: "Creator Temático", tier: 'C' as const, upfrontCost: 20000, royaltyRate: 0.07, minRoyalty: 0.04, emoji: "⭐" },
+];
 
 const INITIAL_UPGRADES: Upgrade[] = [
   { id: 'webcam', name: 'Webcam 720p', basePrice: 50, multiplier: 1.5, type: 'equipment', level: 0 },
@@ -176,52 +395,11 @@ const INITIAL_UPGRADES: Upgrade[] = [
 ];
 
 const HOUSINGS: Housing[] = [
-  { 
-    id: 'parents', 
-    name: 'Casa da Mãe', 
-    entryCost: 0, 
-    weeklyRent: 50, 
-    viewMultiplier: 1.0, 
-    energyBonus: 0, 
-    description: 'Onde tudo começou. O Wi-Fi cai às vezes, mas a comida é por conta da casa.' 
-  },
-  { 
-    id: 'rented_room', 
-    name: 'Quarto Alugado', 
-    entryCost: 1000, 
-    weeklyRent: 300, 
-    viewMultiplier: 1.15, 
-    energyBonus: 0, 
-    description: 'Seu primeiro passo rumo à independência. Mais tempo e foco para seus vídeos.' 
-  },
-  { 
-    id: 'apartment', 
-    name: 'Apartamento de Criador', 
-    entryCost: 15000, 
-    weeklyRent: 1200, 
-    viewMultiplier: 1.3, 
-    energyBonus: 20, 
-    description: 'Um espaço moderno com cenário dedicado. Seus inscritos começam a notar a qualidade.' 
-  },
-  { 
-    id: 'mansion', 
-    name: 'Mansão dos Sonhos', 
-    entryCost: 150000, 
-    weeklyRent: 7000, 
-    viewMultiplier: 1.6, 
-    energyBonus: 50, 
-    description: 'Piscina, área gourmet e muitos cenários para vlogs. Você é oficialmente uma celebridade.' 
-  },
-  { 
-    id: 'studio', 
-    name: 'Estúdio Gamer de Elite', 
-    entryCost: 1000000, 
-    weeklyRent: 20000, 
-    viewMultiplier: 2.2, 
-    energyBonus: 100, 
-    description: 'O auge da carreira. Um prédio tecnológico onde você pode gerenciar sua marca e outros talentos.',
-    minCompanyLevel: true
-  },
+  { id: 'parents', name: 'Casa da Mãe', entryCost: 0, weeklyRent: 50, viewMultiplier: 1.0, energyBonus: 0, description: 'O Wi-Fi cai às vezes, mas a comida é por conta da casa.' },
+  { id: 'rented_room', name: 'Quarto Alugado', entryCost: 1000, weeklyRent: 300, viewMultiplier: 1.15, energyBonus: 0, description: 'Seu primeiro passo rumo à independência. Mais foco para gravar.' },
+  { id: 'apartment', name: 'Apartamento Creator', entryCost: 15000, weeklyRent: 1200, viewMultiplier: 1.3, energyBonus: 20, description: 'Cenário dedicado moderno. Seus inscritos notam o upgrade.' },
+  { id: 'mansion', name: 'Mansão dos Sonhos', entryCost: 150000, weeklyRent: 7000, viewMultiplier: 1.6, energyBonus: 50, description: 'Piscina e cenários incríveis. Você é oficialmente uma celebridade.' },
+  { id: 'studio', name: 'Estúdio Gamer de Elite', entryCost: 1000000, weeklyRent: 20000, viewMultiplier: 2.2, energyBonus: 100, description: 'Prédio tecnológico para gerenciar marcas, parcerias e seu canal.', minCompanyLevel: true },
 ];
 
 const OUTSIDE_WORKS: OutsideWork[] = [
@@ -244,10 +422,103 @@ const INITIAL_AGENCY: AgencyState = {
   level: 1,
   reputation: 50,
   specialization: 'none',
-  talents: [],
-  staff: [],
-  monthlyExpenses: 0
+  talents: []
 };
+
+const INITIAL_COMPANIES: CompanyState[] = [
+  {
+    id: 'merch',
+    name: 'Minha Grife de Roupas',
+    niche: 'merch',
+    founded: false,
+    money: 0,
+    weeklyMaintenance: 500,
+    taxRegime: 'simples',
+    licenses: [],
+    products: [],
+    weeklyNegativeCount: 0,
+    isBankrupt: false,
+    totalRevenue: 0,
+    activeInstallments: 0,
+    installmentValue: 0,
+    creditScore: 500,
+    maxLoanLimit: 10000,
+    activeLoan: null,
+    web3PayEnabled: false,
+    marketingCampaignCooldown: 0,
+    marketingActive: 'none',
+    marketingWeeksRemaining: 0
+  },
+  {
+    id: 'candy',
+    name: 'Minha Fábrica de Doces',
+    niche: 'candy',
+    founded: false,
+    money: 0,
+    weeklyMaintenance: 1500,
+    taxRegime: 'simples',
+    licenses: [],
+    products: [],
+    weeklyNegativeCount: 0,
+    isBankrupt: false,
+    totalRevenue: 0,
+    activeInstallments: 0,
+    installmentValue: 0,
+    creditScore: 500,
+    maxLoanLimit: 10000,
+    activeLoan: null,
+    web3PayEnabled: false,
+    marketingCampaignCooldown: 0,
+    marketingActive: 'none',
+    marketingWeeksRemaining: 0
+  },
+  {
+    id: 'food',
+    name: 'Minha Rede de Fast Food',
+    niche: 'food',
+    founded: false,
+    money: 0,
+    weeklyMaintenance: 5000,
+    taxRegime: 'simples',
+    licenses: [],
+    products: [],
+    weeklyNegativeCount: 0,
+    isBankrupt: false,
+    totalRevenue: 0,
+    activeInstallments: 0,
+    installmentValue: 0,
+    creditScore: 500,
+    maxLoanLimit: 10000,
+    activeLoan: null,
+    web3PayEnabled: false,
+    marketingCampaignCooldown: 0,
+    marketingActive: 'none',
+    marketingWeeksRemaining: 0
+  },
+  {
+    id: 'tech',
+    name: 'Meus Periféricos Gamer',
+    niche: 'tech',
+    founded: false,
+    money: 0,
+    weeklyMaintenance: 15000,
+    taxRegime: 'simples',
+    licenses: [],
+    products: [],
+    weeklyNegativeCount: 0,
+    isBankrupt: false,
+    totalRevenue: 0,
+    activeInstallments: 0,
+    installmentValue: 0,
+    creditScore: 500,
+    maxLoanLimit: 10000,
+    activeLoan: null,
+    web3PayEnabled: false,
+    marketingCampaignCooldown: 0,
+    marketingActive: 'none',
+    marketingWeeksRemaining: 0
+  }
+];
 
 const GameContext = createContext<GameContextType | undefined>(undefined);
 
@@ -263,8 +534,12 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [videoHistory, setVideoHistory] = useState<Video[]>([]);
   const [investments, setInvestments] = useState<Investment[]>(INITIAL_INVESTMENTS);
   const [agency, setAgency] = useState<AgencyState>(INITIAL_AGENCY);
+  const [companies, setCompanies] = useState<CompanyState[]>(INITIAL_COMPANIES);
+  const [totalTaxesPaid, setTotalTaxesPaid] = useState(0);
+  const [cryptoToken, setCryptoToken] = useState<CryptoTokenState | null>(null);
+
   const [weeklyReport, setWeeklyReport] = useState<WeeklyReport>({
-    views: 0, subscribers: 0, youtubeEarnings: 0, companyEarnings: 0, investmentChange: 0, expenses: 0, housingExpenses: 0, netTotal: 0, isVisible: false, events: []
+    views: 0, subscribers: 0, youtubeEarnings: 0, companyEarnings: 0, investmentChange: 0, expenses: 0, housingExpenses: 0, netTotal: 0, isVisible: false, events: [], dreData: []
   });
 
   const formatDate = (w: number) => {
@@ -274,6 +549,11 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const month = months[totalMonths % 12];
     const weekInMonth = ((w - 1) % 4) + 1;
     return `Semana ${weekInMonth} - ${month}/${year}`;
+  };
+
+  const addViews = (amount: number) => {
+    // Add views manually if needed
+    setTotalViews(prev => prev + amount);
   };
 
   const publishVideo = (data: PublishVideoData) => {
@@ -288,7 +568,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setEnergy(prev => prev - cost);
 
     const newVideo: Video = {
-      id: Math.random().toString(36).substr(2, 9),
+      id: Math.random().toString(36).substring(2, 11),
       title: data.title || `Vídeo #${videoHistory.length + 1}`,
       category: data.category,
       thumbnail: data.thumbnail,
@@ -300,7 +580,8 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
       earnings: 0,
       isPromoted: data.isPromoted,
       date: Date.now(),
-      weeksActive: 0
+      weeksActive: 0,
+      selfPromotion: data.selfPromotion || null
     };
 
     if (data.isPromoted) {
@@ -309,6 +590,482 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     setVideoHistory([newVideo, ...videoHistory]);
   };
+
+  // --- BUSINESS CORE ACTIONS ---
+
+  const foundCompany = (niche: 'merch' | 'candy' | 'food' | 'tech', name: string, taxRegime: 'real' | 'simples') => {
+    const scheme = COMPANY_SCHEMES[niche];
+    if (money < scheme.foundationCost) {
+      alert("Saldo pessoal PF insuficiente para pagar o custo de fundação!");
+      return;
+    }
+    if (subscribers < scheme.unlockedAtSubs) {
+      alert(`Requisito de inscritos não alcançado! Requer ${scheme.unlockedAtSubs.toLocaleString()} subs.`);
+      return;
+    }
+
+    setMoney(prev => prev - scheme.foundationCost);
+
+    const initialProducts: ProductState[] = [
+      {
+        id: scheme.basicProduct.id,
+        name: scheme.basicProduct.name,
+        category: 'basic',
+        insumoCost: scheme.basicProduct.insumoCost,
+        price: scheme.basicProduct.price,
+        stock: 0,
+        emoji: scheme.basicProduct.emoji,
+        isUnlocked: true,
+        totalSales: 0,
+        weeklySales: 0,
+        creatorCollab: null,
+        collabRoyalties: 0
+      }
+    ];
+
+    scheme.licenses.forEach(lic => {
+      lic.products.forEach(p => {
+        initialProducts.push({
+          id: p.id,
+          name: p.name,
+          category: lic.id,
+          insumoCost: p.insumoCost,
+          price: p.price,
+          stock: 0,
+          emoji: p.emoji,
+          isUnlocked: false,
+          totalSales: 0,
+          weeklySales: 0,
+          creatorCollab: null,
+          collabRoyalties: 0
+        });
+      });
+    });
+
+    const newCompany: CompanyState = {
+      id: niche,
+      name,
+      niche,
+      founded: true,
+      money: 0, // Starts at 0, needs PF injeção
+      weeklyMaintenance: scheme.maintenance,
+      taxRegime,
+      licenses: scheme.licenses.map(lic => ({ id: lic.id, name: lic.name, cost: lic.cost, productIds: lic.products.map(p => p.id), isUnlocked: false })),
+      products: initialProducts,
+      weeklyNegativeCount: 0,
+      isBankrupt: false,
+      totalRevenue: 0,
+      activeInstallments: 0,
+      installmentValue: 0,
+      creditScore: 500,
+      maxLoanLimit: 10000,
+      activeLoan: null,
+      web3PayEnabled: false,
+      marketingCampaignCooldown: 0,
+      marketingActive: 'none',
+      marketingWeeksRemaining: 0
+    };
+
+    setCompanies(prev => prev.map(c => c.id === niche ? newCompany : c));
+  };
+
+  const buyLicense = (companyId: string, licenseId: string) => {
+    setCompanies(prev => prev.map(comp => {
+      if (comp.id !== companyId) return comp;
+      const targetLicense = comp.licenses.find(l => l.id === licenseId);
+      if (!targetLicense) return comp;
+
+      if (comp.money < targetLicense.cost) {
+        alert("Caixa da Empresa (PJ) insuficiente! Você entrará em cheque especial.");
+      }
+
+      const updatedLicenses = comp.licenses.map(l => l.id === licenseId ? { ...l, isUnlocked: true } : l);
+      const updatedProducts = comp.products.map(p => p.category === licenseId ? { ...p, isUnlocked: true } : p);
+
+      return {
+        ...comp,
+        money: comp.money - targetLicense.cost,
+        licenses: updatedLicenses,
+        products: updatedProducts
+      };
+    }));
+  };
+
+  const buyStock = (companyId: string, productId: string, batchSize: number) => {
+    setCompanies(prev => prev.map(comp => {
+      if (comp.id !== companyId) return comp;
+      const product = comp.products.find(p => p.id === productId);
+      if (!product) return comp;
+
+      const totalCost = product.insumoCost * batchSize;
+      if (comp.money < totalCost) {
+        alert("Caixa PJ insuficiente! Realizando compra com Cheque Especial.");
+      }
+
+      const updatedProducts = comp.products.map(p => p.id === productId ? { ...p, stock: p.stock + batchSize } : p);
+
+      return {
+        ...comp,
+        money: comp.money - totalCost,
+        products: updatedProducts
+      };
+    }));
+  };
+
+  const injectPJCapital = (companyId: string, amount: number) => {
+    if (money < amount) {
+      alert("Você não possui saldo pessoal (PF) suficiente!");
+      return;
+    }
+
+    const netAmount = amount * 0.982; // 1.8% transaction fee
+    setMoney(prev => prev - amount);
+    setCompanies(prev => prev.map(comp => comp.id === companyId ? { ...comp, money: comp.money + netAmount } : comp));
+  };
+
+  const withdrawPJDividends = (companyId: string, amount: number) => {
+    setCompanies(prev => prev.map(comp => {
+      if (comp.id !== companyId) return comp;
+      if (comp.money < amount) {
+        alert("A empresa não possui saldo em caixa PJ suficiente para retirar este valor!");
+        return comp;
+      }
+
+      let netAmount = amount;
+      let taxDeducted = 0;
+
+      if (comp.taxRegime === 'real') {
+        taxDeducted = amount * 0.15; // 15% dividend tax
+        netAmount = amount - taxDeducted;
+        setTotalTaxesPaid(t => t + taxDeducted);
+      }
+
+      setMoney(m => m + netAmount);
+      return {
+        ...comp,
+        money: comp.money - amount
+      };
+    }));
+  };
+
+  const consolidatePJDebt = (companyId: string) => {
+    setCompanies(prev => prev.map(comp => {
+      if (comp.id !== companyId) return comp;
+      if (comp.money >= 0 && !comp.activeLoan) {
+        alert("Esta empresa não possui dívidas pendentes!");
+        return comp;
+      }
+
+      const loanBalance = comp.activeLoan ? comp.activeLoan.totalToPay : 0;
+      const currentDebt = comp.money < 0 ? Math.abs(comp.money) : 0;
+      const totalDebt = currentDebt + loanBalance;
+
+      if (totalDebt <= 0) return comp;
+
+      // 10% fee applied
+      const totalConsolidated = totalDebt * 1.1;
+      const installmentValue = totalConsolidated / 5;
+
+      return {
+        ...comp,
+        money: 0,
+        activeLoan: null,
+        activeInstallments: 5,
+        installmentValue,
+        weeklyNegativeCount: 0 // Reset/Freeze bankruptcy count
+      };
+    }));
+    alert("Dívidas consolidadas! Parceladas em 5 prestações semanais pagas pelo caixa PJ. Risco de falência pausado!");
+  };
+
+  const takePJLoan = (companyId: string, amount: number, weeks: number) => {
+    setCompanies(prev => prev.map(comp => {
+      if (comp.id !== companyId) return comp;
+      if (comp.activeLoan) {
+        alert("Esta empresa já possui um empréstimo ativo no momento!");
+        return comp;
+      }
+
+      if (amount > comp.maxLoanLimit) {
+        alert(`O limite máximo de crédito disponível para esta empresa é de $${comp.maxLoanLimit.toLocaleString()}!`);
+        return comp;
+      }
+
+      // Juros based on score: 8% (at 300) to 1.8% (at 1000)
+      const interestRate = 0.08 - ((comp.creditScore - 300) / 700) * 0.062;
+      const totalToPay = amount * (1 + interestRate * weeks);
+      const weeklyPayment = totalToPay / weeks;
+
+      const newLoan: Loan = {
+        amount,
+        remainingWeeks: weeks,
+        weeklyPayment,
+        totalToPay,
+        interestRate
+      };
+
+      return {
+        ...comp,
+        money: comp.money + amount,
+        activeLoan: newLoan
+      };
+    }));
+  };
+
+  const payPJLoan = (companyId: string) => {
+    setCompanies(prev => prev.map(comp => {
+      if (comp.id !== companyId || !comp.activeLoan) return comp;
+      const cost = comp.activeLoan.totalToPay;
+
+      if (comp.money < cost) {
+        alert("Caixa PJ insuficiente para quitar o empréstimo!");
+        return comp;
+      }
+
+      // Successful loan payoff triples limit and adds +50 credit score
+      const newScore = Math.min(1000, comp.creditScore + 50);
+      const newMaxLimit = comp.maxLoanLimit * 3;
+
+      return {
+        ...comp,
+        money: comp.money - cost,
+        activeLoan: null,
+        creditScore: newScore,
+        maxLoanLimit: newMaxLimit
+      };
+    }));
+    alert("Empréstimo quitado antecipadamente com sucesso! Score de crédito aumentado e limite de empréstimo TRIPLCADO (3x)!");
+  };
+
+  const setPJProductPrice = (companyId: string, productId: string, price: number, customName?: string) => {
+    setCompanies(prev => prev.map(comp => {
+      if (comp.id !== companyId) return comp;
+      const updatedProducts = comp.products.map(p => {
+        if (p.id === productId) {
+          return {
+            ...p,
+            price,
+            name: customName || p.name
+          };
+        }
+        return p;
+      });
+      return {
+        ...comp,
+        products: updatedProducts
+      };
+    }));
+  };
+
+  const launchCryptoToken = (name: string, symbol: string) => {
+    const cost = 40000000;
+    if (money < cost) {
+      alert("Saldo pessoal (PF) de $40M necessário para criar a criptomoeda!");
+      return;
+    }
+
+    setMoney(prev => prev - cost);
+    setCryptoToken({
+      name,
+      symbol: symbol.toUpperCase(),
+      price: 1.00,
+      previousPrice: 1.00,
+      totalSupply: 100000000,
+      treasuryOwnedPercent: 100,
+      dailyVolume: 2500000,
+      hypeMultiplier: 1.0
+    });
+    alert(`Criptomoeda ${name} ($${symbol.toUpperCase()}) lançada com sucesso no mercado Web3!`);
+  };
+
+  const vestCryptoTreasury = (percent: number, destination: 'PF' | 'PJ', companyId?: string) => {
+    if (!cryptoToken) return;
+    if (cryptoToken.treasuryOwnedPercent < percent) {
+      alert("Você não possui tokens de tesouraria suficientes!");
+      return;
+    }
+
+    const tokenAmount = (percent / 100) * cryptoToken.totalSupply;
+    const dollarsGenerated = tokenAmount * cryptoToken.price;
+
+    setCryptoToken(prev => prev ? { ...prev, treasuryOwnedPercent: prev.treasuryOwnedPercent - percent } : null);
+
+    if (destination === 'PF') {
+      setMoney(m => m + dollarsGenerated);
+      alert(`Vendido ${percent}% da Tesouraria por $${dollarsGenerated.toLocaleString()} injetados na sua conta pessoal (PF)!`);
+    } else if (destination === 'PJ' && companyId) {
+      setCompanies(prev => prev.map(comp => comp.id === companyId ? { ...comp, money: comp.money + dollarsGenerated } : comp));
+      alert(`Vendido ${percent}% da Tesouraria por $${dollarsGenerated.toLocaleString()} injetados no caixa PJ de ${companyId}!`);
+    }
+  };
+
+  const toggleCryptoPayment = (companyId: string) => {
+    setCompanies(prev => prev.map(comp => comp.id === companyId ? { ...comp, web3PayEnabled: !comp.web3PayEnabled } : comp));
+  };
+
+  const buybackBankruptCompany = (companyId: string) => {
+    const comp = companies.find(c => c.id === companyId);
+    if (!comp || !comp.isBankrupt) return;
+
+    const buybackCost = Math.max(50000, comp.totalRevenue * 2);
+    if (money < buybackCost) {
+      alert(`Saldo pessoal (PF) insuficiente! Custo de compra da falência: $${buybackCost.toLocaleString()}`);
+      return;
+    }
+
+    setMoney(prev => prev - buybackCost);
+    setCompanies(prev => prev.map(c => {
+      if (c.id === companyId) {
+        return {
+          ...c,
+          money: 10000, // Reopens with 10k PJ cash
+          isBankrupt: false,
+          weeklyNegativeCount: 0,
+          activeLoan: null,
+          activeInstallments: 0,
+          installmentValue: 0
+        };
+      }
+      return c;
+    }));
+    alert(`Empresa comprada da falência por $${buybackCost.toLocaleString()}! Operações restabelecidas.`);
+  };
+
+  const startMarketingCampaign = (companyId: string, campaignType: 'instagram' | 'live' | 'dedicated') => {
+    const campaignCosts = { instagram: 2000, live: 8000, dedicated: 25000 };
+    const cost = campaignCosts[campaignType];
+
+    setCompanies(prev => prev.map(comp => {
+      if (comp.id !== companyId) return comp;
+      if (comp.marketingCampaignCooldown > 0) {
+        alert("Campanhas de marketing em cooldown de 4 semanas!");
+        return comp;
+      }
+      if (comp.money < cost) {
+        alert("Caixa PJ insuficiente! Entrando em cheque especial para pagar campanha.");
+      }
+
+      return {
+        ...comp,
+        money: comp.money - cost,
+        marketingActive: campaignType,
+        marketingWeeksRemaining: 1, // Lasts 1 week
+        marketingCampaignCooldown: 4 // Cooldown 4 weeks
+      };
+    }));
+  };
+
+  const signCreatorCollab = (companyId: string, creatorName: string) => {
+    const creator = FAMOUS_CREATORS.find(c => c.name === creatorName);
+    if (!creator) return;
+
+    setCompanies(prev => prev.map(comp => {
+      if (comp.id !== companyId) return comp;
+      if (comp.money < creator.upfrontCost) {
+        alert(`Saldo PJ insuficiente para cachê upfront de $${creator.upfrontCost.toLocaleString()}!`);
+        return comp;
+      }
+
+      // Generate special collab product
+      const randomId = 'collab_' + creatorName.toLowerCase().replace(/\s+/g, '_');
+      
+      // Determine stats based on top tier product of this niche
+      let insumo = 4.00;
+      let price = 24.99;
+      let emoji = "👕";
+      if (comp.niche === 'candy') { insumo = 2.00; price = 9.99; emoji = "🍫"; }
+      else if (comp.niche === 'food') { insumo = 6.00; price = 19.99; emoji = "🍔"; }
+      else if (comp.niche === 'tech') { insumo = 50.00; price = 199.99; emoji = "⌨️"; }
+
+      const newCollabProduct: ProductState = {
+        id: randomId,
+        name: `Linha Premium ${creatorName}`,
+        category: 'collab',
+        insumoCost: insumo,
+        price,
+        stock: 0,
+        emoji,
+        isUnlocked: true,
+        totalSales: 0,
+        weeklySales: 0,
+        creatorCollab: creatorName,
+        collabRoyalties: creator.royaltyRate
+      };
+
+      return {
+        ...comp,
+        money: comp.money - creator.upfrontCost,
+        products: [...comp.products, newCollabProduct]
+      };
+    }));
+    alert(`Parceria assinada com ${creatorName}! Produto Premium liberado na loja da sua empresa.`);
+  };
+
+  const negotiateAgencyContract = (talent: Talent, commission: number, signingFee: number) => {
+    if (money < signingFee) {
+      alert("Saldo pessoal (PF) de Signing Fee indisponível!");
+      return;
+    }
+
+    // Interactive Acceptance Logic: Commission Expectation depends on subscribers & potential
+    // Expectations: commission 15% (0.15) to 25% (0.25). Signing fee is compared to expectations
+    const baseSigningExpectation = talent.subscribers * 0.1 * (talent.potential === 'S' ? 5 : talent.potential === 'A' ? 3 : 1) + 1000;
+    const comRatio = (0.35 - commission) / 0.25; // Lower commission is better for creator, higher for agency
+    const feeRatio = signingFee / baseSigningExpectation;
+
+    // Acceptance Meter (0 to 100)
+    const acceptance = Math.min(100, Math.floor(feeRatio * 40 + comRatio * 60));
+
+    if (acceptance >= 50) {
+      // Contract signed!
+      const signedTalent: Talent = {
+        ...talent,
+        contract: {
+          commissionPercent: commission,
+          monthsRemaining: 12,
+          exclusivity: true,
+          terminationFine: Math.floor(signingFee * 1.5)
+        }
+      };
+
+      setMoney(prev => prev - signingFee);
+      setAgency(prev => ({
+        ...prev,
+        talents: [...prev.talents, signedTalent]
+      }));
+      alert(`Parceria fechada! ${talent.name} assinou com sua agência! (Aceitação: ${acceptance}%)`);
+    } else {
+      alert(`${talent.name} recusou a proposta! A oferta de Signing Fee ou a comissão não foram atrativas. (Aceitação: ${acceptance}%)`);
+    }
+  };
+
+  const createAgency = (name: string) => {
+    const foundationFee = 30000;
+    if (money < foundationFee) {
+      alert("Saldo PF de $30,000 necessário para fundar a agência!");
+      return;
+    }
+    if (subscribers < 50000) {
+      alert("Sua agência exige no mínimo 50.000 inscritos!");
+      return;
+    }
+
+    setMoney(prev => prev - foundationFee);
+    setAgency({
+      ...INITIAL_AGENCY,
+      exists: true,
+      name
+    });
+  };
+
+  const fireTalent = (talentId: string) => {
+    setAgency(prev => ({
+      ...prev,
+      talents: prev.talents.filter(t => t.id !== talentId)
+    }));
+  };
+
+  // --- WEEKLOOP LOGIC ---
 
   const nextWeek = () => {
     let weekTotalViews = 0;
@@ -326,8 +1083,11 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const categoryMultipliers = { vlog: 1.0, games: 1.2, pov: 0.8, challenge: 1.5, trend: 2.0, dance: 1.3, music: 2.5 };
       const baseViews = (100 + Math.random() * 500) * (1 + subscribers * 0.05);
       const promoMultiplier = video.isPromoted ? 3.0 : 1.0;
-      const generatedViews = Math.floor(baseViews * categoryMultipliers[video.category] * promoMultiplier * performanceFactor * housing.viewMultiplier);
       
+      // Promotion penalization
+      const promotionalPenalty = video.selfPromotion ? 0.90 : 1.0;
+      const generatedViews = Math.floor(baseViews * categoryMultipliers[video.category] * promoMultiplier * performanceFactor * housing.viewMultiplier * promotionalPenalty);
+
       let baseRPM = 0.5;
       if (subscribers >= 1000000) baseRPM = 15.0;
       else if (subscribers >= 100000) baseRPM = 5.0 + (subscribers / 1000000) * 7;
@@ -353,99 +1113,338 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
       };
     });
 
+    // --- 1. PROCESS TALENTS (AGENCY PF INCOME) ---
     let weekAgencyEarnings = 0;
-    let weekBrandEarnings = 0;
-    let weekExpenses = 0;
     const weekEvents: WeeklyReport['events'] = [];
-    
-    // Process Talents
+
     const updatedTalents = agency.talents.map(talent => {
-      // Simulate weekly growth for each talent
       const performanceFactor = (talent.charisma * 0.5 + talent.creativity * 0.5) * talent.consistency;
-      let trendMultiplier = Math.random() * 0.5 + 0.8; // 0.8 to 1.3
-      const supportBonus = agency.staff.filter(s => s.role === 'editor' || s.role === 'manager').length * 0.1;
-      
-      // Event triggers
-      const viralChance = talent.creativity / 500; // up to 20% if creativity is 100
-      const cancelChance = (talent.ego + (100 - talent.reputation)) / 1000; // up to 20%
-      
+      let trendMultiplier = Math.random() * 0.5 + 0.8;
+
+      const viralChance = talent.creativity / 400;
+      const cancelChance = (talent.ego + (100 - talent.reputation)) / 800;
+
       if (Math.random() < viralChance) {
-          trendMultiplier *= 3;
-          weekEvents.push({ title: `VÍDEO VIRAL: ${talent.name}`, desc: "Um vídeo explodiu no algoritmo! Receita e inscritos triplicados esta semana.", type: 'positive' });
+        trendMultiplier *= 3;
+        weekEvents.push({ title: `VIRAL: ${talent.name}`, desc: "Vídeo explodiu no algoritmo! Ganhos triplicados.", type: 'positive' });
       } else if (Math.random() < cancelChance && talent.subscribers > 10000) {
-          trendMultiplier *= 0.1;
-          weekEvents.push({ title: `CANCELAMENTO: ${talent.name}`, desc: "Uma polêmica antiga surgiu. O público está furioso e o engajamento despencou.", type: 'negative' });
+        trendMultiplier *= 0.1;
+        weekEvents.push({ title: `POLÊMICA: ${talent.name}`, desc: "Cancelamento em massa! Queda brusca no algoritmo.", type: 'negative' });
       }
 
-      if (talent.burnout > 80) {
-          trendMultiplier *= 0.5;
-          weekEvents.push({ title: `BURNOUT: ${talent.name}`, desc: "Talento está exausto e produzindo conteúdo sem qualidade.", type: 'negative' });
-      }
-      
-      const generatedViews = Math.floor(1000 * performanceFactor * trendMultiplier * (1 + supportBonus));
+      const generatedViews = Math.floor(1200 * performanceFactor * trendMultiplier);
       const generatedSubs = Math.floor(generatedViews * (talent.engagement / 100));
-      
-      const revenue = (generatedViews / 1000) * 2.5; // Average $2.5 RPM
-      
+      const revenue = (generatedViews / 1000) * 3.0; // $3.0 RPM
+
       if (talent.contract) {
         weekAgencyEarnings += revenue * talent.contract.commissionPercent;
       }
-
-      // Brand Revenue
-      talent.brands.forEach(brand => {
-          const egoPenalty = 1 - (talent.ego / 200); 
-          const burnoutPenalty = 1 - (talent.burnout / 150);
-          const brandIncome = brand.baseIncome * Math.pow(1.5, brand.level - 1) * brand.synergy * egoPenalty * burnoutPenalty;
-          weekBrandEarnings += brandIncome;
-      });
-      
-      // Update burnout and ego
-      let newBurnout = talent.burnout + (talent.consistency > 0.8 ? 8 : 4);
-      const managerBonus = agency.staff.filter(s => s.role === 'manager').length * 3;
-      newBurnout = Math.max(0, newBurnout - managerBonus);
-      
-      let newEgo = talent.ego + (generatedSubs > 10000 ? 2 : 1);
-      newEgo = Math.max(0, newEgo - managerBonus * 0.5);
 
       return {
         ...talent,
         subscribers: talent.subscribers + generatedSubs,
         totalViews: talent.totalViews + generatedViews,
-        burnout: Math.min(100, newBurnout),
-        ego: Math.min(100, newEgo),
         contract: talent.contract ? { ...talent.contract, monthsRemaining: Math.max(0, talent.contract.monthsRemaining - 0.25) } : null
       };
     });
 
-    if (agency.exists) {
-      const staffCosts = agency.staff.reduce((acc, s) => acc + s.salary, 0);
-      weekExpenses = staffCosts + agency.monthlyExpenses / 4;
-      setAgency(prev => ({ ...prev, talents: updatedTalents }));
+    // --- 2. PROCESS CRYPTOCURRENCY MARKET ---
+    let cryptoPassivePFIncome = 0;
+    if (cryptoToken) {
+      const marketVol = 0.15;
+      const priceChange = 1 + (Math.random() * marketVol * 2 - marketVol) + (cryptoToken.hypeMultiplier > 1.0 ? 0.05 : -0.02);
+      const newPrice = Math.max(0.01, cryptoToken.price * priceChange);
+
+      // Volume is simulated based on price & random whales
+      const volumeSim = cryptoToken.totalSupply * 0.02 * newPrice * (0.5 + Math.random());
+      
+      // Protocol transaction fee: 1.0% of volume deposited in PF weekly!
+      cryptoPassivePFIncome = volumeSim * 0.01;
+
+      setCryptoToken(prev => prev ? {
+        ...prev,
+        price: Number(newPrice.toFixed(4)),
+        previousPrice: prev.price,
+        dailyVolume: Math.floor(volumeSim / 7),
+        hypeMultiplier: Math.max(1.0, prev.hypeMultiplier - 0.2) // Decay hype
+      } : null);
+
+      if (Math.random() < 0.15) {
+        const isUp = Math.random() > 0.5;
+        weekEvents.push({
+          title: `MERCADO WEB3: ${cryptoToken.symbol}`,
+          desc: isUp 
+            ? `Baleias do ecossistema compraram milhões de tokens. ${cryptoToken.symbol} sobe!` 
+            : `Um investidor antigo liquidou posições. ${cryptoToken.symbol} sofre correção.`,
+          type: isUp ? 'positive' : 'negative'
+        });
+      }
     }
 
+    // --- 3. PROCESS PJ COMPANIES SALES, COSTS, LOANS & BANKRUPTCIES ---
+    let totalCompanyEarnings = 0; // Cumulative net profit/loss across all PJs
+    const dreDataList: DREItem[] = [];
+
+    // Calculate views for self-promotion
+    const activeVideoSelfPromo = updatedVideos[0] && updatedVideos[0].weeksActive === 1 ? updatedVideos[0] : null;
+
+    const updatedCompanies = companies.map(comp => {
+      if (!comp.founded) return comp;
+      if (comp.isBankrupt) {
+        dreDataList.push({ name: comp.name, revenue: 0, costs: comp.weeklyMaintenance, taxes: 0, netProfit: -comp.weeklyMaintenance, color: '#ff4444' });
+        return comp;
+      }
+
+      let companyRevenue = 0;
+      let companyMaterialCost = 0;
+      let royaltyPayment = 0;
+
+      // Check dynamic marketing boosts
+      let marketingMultiplier = 1.0;
+      if (comp.marketingActive === 'instagram') marketingMultiplier = 1.5;
+      else if (comp.marketingActive === 'live') marketingMultiplier = 2.5;
+      else if (comp.marketingActive === 'dedicated') marketingMultiplier = 5.0;
+
+      const web3Boost = comp.web3PayEnabled ? 1.2 : 1.0;
+
+      // A. Process products demand and sales
+      const updatedProducts = comp.products.map(prod => {
+        if (!prod.isUnlocked) return prod;
+
+        // Base weekly sales units
+        let baseDemand = 10;
+        if (comp.niche === 'candy') baseDemand = 60;
+        else if (comp.niche === 'food') baseDemand = 120;
+        else if (comp.niche === 'tech') baseDemand = 20;
+
+        if (prod.category === 'collab') baseDemand *= 2.0;
+
+        // Subscriber leverage
+        const leverage = 1 + Math.sqrt(subscribers) * 0.03;
+        const targetDemand = baseDemand * leverage * marketingMultiplier * web3Boost;
+        
+        let salesUnits = Math.min(prod.stock, Math.floor(targetDemand * (0.8 + Math.random() * 0.4)));
+
+        // self promotion video conversion (2% of views)
+        if (activeVideoSelfPromo && activeVideoSelfPromo.selfPromotion && activeVideoSelfPromo.selfPromotion.companyId === comp.id && activeVideoSelfPromo.selfPromotion.productId === prod.id) {
+          const promoSales = Math.min(prod.stock - salesUnits, Math.floor(activeVideoSelfPromo.newViews * 0.02));
+          if (promoSales > 0) {
+            salesUnits += promoSales;
+            // Boost token hype if Web3
+            if (cryptoToken) {
+              setCryptoToken(c => c ? { ...c, hypeMultiplier: c.hypeMultiplier + 0.3 } : null);
+            }
+          }
+        }
+
+        const grossSales = salesUnits * prod.price;
+        companyRevenue += grossSales;
+
+        // If it's a collab, subtract royalties
+        let royals = 0;
+        if (prod.creatorCollab) {
+          royals = grossSales * prod.collabRoyalties;
+          royaltyPayment += royals;
+        }
+
+        return {
+          ...prod,
+          stock: prod.stock - salesUnits,
+          weeklySales: salesUnits,
+          totalSales: prod.totalSales + salesUnits
+        };
+      });
+
+      // B. Deduct taxes
+      let taxValue = 0;
+      if (comp.taxRegime === 'simples') {
+        taxValue = companyRevenue * 0.08; // 8% flat weekly faturamento
+        setTotalTaxesPaid(t => t + taxValue);
+      }
+
+      // C. Costs: Maintenance + Consolidation Installments + Active Loans + Royalties
+      let fixedCosts = comp.weeklyMaintenance;
+      let installmentPaid = 0;
+      let loanPaid = 0;
+
+      if (comp.activeInstallments > 0) {
+        installmentPaid = comp.installmentValue;
+      }
+
+      let updatedLoan = comp.activeLoan;
+      if (comp.activeLoan) {
+        loanPaid = comp.activeLoan.weeklyPayment;
+        const newRem = comp.activeLoan.remainingWeeks - 1;
+        if (newRem <= 0) {
+          // Empréstimo paid off!
+          updatedLoan = null;
+          comp.creditScore = Math.min(1000, comp.creditScore + 50);
+          comp.maxLoanLimit *= 3;
+        } else {
+          updatedLoan = {
+            ...comp.activeLoan,
+            remainingWeeks: newRem,
+            totalToPay: Math.max(0, comp.activeLoan.totalToPay - loanPaid)
+          };
+        }
+      }
+
+      const totalCostsThisWeek = fixedCosts + installmentPaid + loanPaid + royaltyPayment;
+      const compNetProfit = companyRevenue - totalCostsThisWeek - taxValue;
+
+      // Update balances
+      let newBalance = comp.money + compNetProfit;
+
+      // Bankruptcy & Cheque Especial Interest
+      let updatedNegativeCount = comp.weeklyNegativeCount;
+      let bankruptActive: boolean = comp.isBankrupt;
+
+      if (newBalance < 0) {
+        // Decrease score
+        comp.creditScore = Math.max(300, comp.creditScore - 30);
+        
+        // Progressive interest rate: 5% up to 18%
+        let jurosRate = 0.05;
+        if (comp.weeklyNegativeCount === 1) jurosRate = 0.08;
+        else if (comp.weeklyNegativeCount === 2) jurosRate = 0.12;
+        else if (comp.weeklyNegativeCount >= 3) jurosRate = 0.18;
+
+        const interestCharge = Math.abs(newBalance) * jurosRate;
+        newBalance -= interestCharge;
+
+        if (comp.activeInstallments > 0) {
+          // Paused bankruptcy risk due to parcelamento
+        } else {
+          updatedNegativeCount += 1;
+        }
+
+        if (updatedNegativeCount >= 4) {
+          bankruptActive = true;
+          weekEvents.push({ title: `FALÊNCIA: ${comp.name}`, desc: "A empresa estourou 4 semanas consecutivas no vermelho e foi fechada por falência judicial bancária!", type: 'negative' });
+        } else {
+          weekEvents.push({ title: `ALERTA FINANCEIRO: ${comp.name}`, desc: `Caixa PJ negativo! Juros fiscais de ${(jurosRate*100).toFixed(0)}% cobrados. Semanas para falência: ${4 - updatedNegativeCount}.`, type: 'neutral' });
+        }
+      } else {
+        comp.creditScore = Math.min(1000, comp.creditScore + 5);
+        updatedNegativeCount = 0;
+      }
+
+      // Update marketing campaign stats
+      const nextCampaignCooldown = Math.max(0, comp.marketingCampaignCooldown - 1);
+      const nextMarketingWeeksRemaining = Math.max(0, comp.marketingWeeksRemaining - 1);
+      const nextMarketingActive = nextMarketingWeeksRemaining === 0 ? 'none' as const : comp.marketingActive;
+
+      totalCompanyEarnings += compNetProfit;
+
+      const compColor = comp.id === 'merch' ? '#ff3b30' : comp.id === 'candy' ? '#ff9500' : comp.id === 'food' ? '#4cd964' : '#007aff';
+      dreDataList.push({
+        name: comp.name,
+        revenue: companyRevenue,
+        costs: totalCostsThisWeek,
+        taxes: taxValue,
+        netProfit: compNetProfit,
+        color: compColor
+      });
+
+      return {
+        ...comp,
+        money: bankruptActive ? 0 : Number(newBalance.toFixed(2)),
+        products: updatedProducts,
+        totalRevenue: comp.totalRevenue + companyRevenue,
+        activeInstallments: Math.max(0, comp.activeInstallments - 1),
+        activeLoan: updatedLoan,
+        weeklyNegativeCount: updatedNegativeCount,
+        isBankrupt: bankruptActive,
+        marketingCampaignCooldown: nextCampaignCooldown,
+        marketingWeeksRemaining: nextMarketingWeeksRemaining,
+        marketingActive: nextMarketingActive
+      };
+    });
+
+    setCompanies(updatedCompanies);
+
+    // --- 4. INVESTMENTS SIMULATION ---
     let invChange = 0;
-    setInvestments(prev => prev.map(inv => {
-      const volatility = inv.type === 'crypto' ? 0.15 : 0.05;
+    const updatedInvestments = investments.map(inv => {
+      const volatility = inv.type === 'crypto' ? 0.20 : 0.05;
       const change = 1 + (Math.random() * volatility * 2 - volatility);
       const newPrice = Math.max(1, inv.price * change);
       if (inv.owned > 0) invChange += (newPrice - inv.price) * inv.owned;
       return { ...inv, previousPrice: inv.price, price: Number(newPrice.toFixed(2)) };
-    }));
+    });
+    setInvestments(updatedInvestments);
 
+    // DRE Data: Add Youtube & Investments to DRE Chart
+    dreDataList.push({
+      name: "AdSense YouTube",
+      revenue: weekYoutubeEarnings,
+      costs: 0,
+      taxes: 0,
+      netProfit: weekYoutubeEarnings,
+      color: '#ff0000'
+    });
+
+    if (agency.exists && weekAgencyEarnings > 0) {
+      dreDataList.push({
+        name: "Agência (Comissões)",
+        revenue: weekAgencyEarnings,
+        costs: 0,
+        taxes: 0,
+        netProfit: weekAgencyEarnings,
+        color: '#ffcc00'
+      });
+    }
+
+    if (cryptoPassivePFIncome > 0) {
+      dreDataList.push({
+        name: "Crypto Protocol Fee",
+        revenue: cryptoPassivePFIncome,
+        costs: 0,
+        taxes: 0,
+        netProfit: cryptoPassivePFIncome,
+        color: '#a832a4'
+      });
+    }
+
+    // D. Final weekly compilation for Personal (PF) Cash
     const housingExpenses = housing.weeklyRent;
-    const netTotal = weekYoutubeEarnings + weekAgencyEarnings + weekBrandEarnings - weekExpenses - housingExpenses;
+    const netPFIncome = weekYoutubeEarnings + weekAgencyEarnings + cryptoPassivePFIncome - housingExpenses;
 
-    setMoney(prev => prev + netTotal);
+    // Apply PF Money update
+    setMoney(prev => Number((prev + netPFIncome).toFixed(2)));
     setSubscribers(prev => prev + weekTotalSubs);
     setTotalViews(prev => prev + weekTotalViews);
     setVideoHistory(updatedVideos);
     setEnergy(maxEnergy + housing.energyBonus);
     setWeek(prev => prev + 1);
 
+    if (agency.exists) {
+      setAgency(prev => ({
+        ...prev,
+        talents: updatedTalents
+      }));
+    }
+
+    // Dynamic News Generator for page 2 Gazeta
+    if (Math.random() < 0.25) {
+      weekEvents.push({ title: "ESTIMATIVA DE INSUMOS", desc: "A safra mundial de cacau aumentou, prevendo quedas nos insumos clássicos de doces em breve.", type: 'positive' });
+    }
+    if (Math.random() < 0.20) {
+      weekEvents.push({ title: "HYPE GAMER", desc: "Novos jogos virtuais impulsionam periféricos gamer, aumentando a demanda geral por mouses e headsets!", type: 'positive' });
+    }
+
     setWeeklyReport({
-      views: weekTotalViews, subscribers: weekTotalSubs, youtubeEarnings: weekYoutubeEarnings,
-      companyEarnings: weekAgencyEarnings + weekBrandEarnings, investmentChange: invChange, expenses: weekExpenses,
-      housingExpenses, netTotal, isVisible: true, events: weekEvents
+      views: weekTotalViews,
+      subscribers: weekTotalSubs,
+      youtubeEarnings: weekYoutubeEarnings,
+      companyEarnings: totalCompanyEarnings, // PJ profits
+      investmentChange: invChange,
+      expenses: 0,
+      housingExpenses,
+      netTotal: netPFIncome + totalCompanyEarnings,
+      isVisible: true,
+      events: weekEvents,
+      dreData: dreDataList
     });
   };
 
@@ -512,83 +1511,36 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setInvestments(prev => prev.map(i => i.id === id ? { ...i, owned: i.owned - amount } : i));
   };
 
-  const createAgency = (name: string) => setAgency({ ...INITIAL_AGENCY, exists: true, name });
-  const hireTalent = (talent: Talent) => setAgency(prev => ({ ...prev, talents: [...prev.talents, talent] }));
-  const fireTalent = (talentId: string) => setAgency(prev => ({ ...prev, talents: prev.talents.filter(t => t.id !== talentId) }));
-  
-  const hireStaff = (role: 'editor' | 'manager' | 'analyst') => {
-    const salaries = { editor: 100, manager: 250, analyst: 150 };
-    const newStaff: StaffMember = { id: Math.random().toString(36).substr(2, 9), name: `Colaborador ${role}`, role, salary: salaries[role] };
-    setAgency(prev => ({ ...prev, staff: [...prev.staff, newStaff] }));
-  };
-
-  const launchBrand = (talentId: string, brandName: string, type: Brand['type']) => {
-    const costs = { merch: 5000, food: 25000, tech: 100000 };
-    if (money >= costs[type]) {
-      setMoney(prev => prev - costs[type]);
-      setAgency(prev => ({
-        ...prev,
-        talents: prev.talents.map(t => {
-          if (t.id === talentId) {
-            const synergyMap = {
-              merch: t.niche === 'lifestyle' || t.niche === 'beauty' ? 1.5 : 1.0,
-              food: t.niche === 'lifestyle' || t.niche === 'asmr' ? 1.4 : 0.8,
-              tech: t.niche === 'tech' || t.niche === 'gaming' ? 1.6 : 0.7
-            };
-            const newBrand: Brand = {
-              id: Math.random().toString(36).substr(2, 9),
-              name: brandName,
-              type,
-              level: 1,
-              baseIncome: type === 'merch' ? 100 : type === 'food' ? 500 : 2000,
-              synergy: synergyMap[type]
-            };
-            return { ...t, brands: [...t.brands, newBrand] };
-          }
-          return t;
-        })
-      }));
-    } else {
-      alert("Saldo insuficiente para lançar esta marca!");
-    }
-  };
-
-  const upgradeTalentBrand = (talentId: string, brandId: string) => {
-    setAgency(prev => ({
-      ...prev,
-      talents: prev.talents.map(t => {
-        if (t.id === talentId) {
-          return {
-            ...t,
-            brands: t.brands.map(b => {
-              if (b.id === brandId) {
-                const cost = b.baseIncome * 20 * b.level;
-                if (money >= cost) {
-                  setMoney(m => m - cost);
-                  return { ...b, level: b.level + 1 };
-                }
-              }
-              return b;
-            })
-          };
-        }
-        return t;
-      })
-    }));
-  };
-
   return (
     <GameContext.Provider value={{
       money, subscribers, totalViews, energy, maxEnergy, week, date: formatDate(week), 
       upgrades, currentHousingId, videoHistory, investments, agency, weeklyReport,
+      companies, totalTaxesPaid, cryptoToken,
       housings: HOUSINGS,
       outsideWorks: OUTSIDE_WORKS,
       stats: { viewsPerClick: 10, subGainRate: 0.05, moneyPerView: 0.01 },
-      addViews: () => {}, publishVideo, buyUpgrade, buyHousing, workOutside,
+      addViews, publishVideo, buyUpgrade, buyHousing, workOutside,
       buyInvestment, sellInvestment,
-      createAgency, hireTalent, fireTalent, hireStaff,
-      launchBrand, upgradeTalentBrand,
-      nextWeek, closeReport
+      createAgency, hireTalent: () => {}, fireTalent,
+      nextWeek, closeReport,
+      
+      // PJ Holdings & Web3 Operations
+      foundCompany,
+      buyLicense,
+      buyStock,
+      injectPJCapital,
+      withdrawPJDividends,
+      consolidatePJDebt,
+      takePJLoan,
+      payPJLoan,
+      setPJProductPrice,
+      launchCryptoToken,
+      vestCryptoTreasury,
+      toggleCryptoPayment,
+      buybackBankruptCompany,
+      startMarketingCampaign,
+      signCreatorCollab,
+      negotiateAgencyContract
     }}>
       {children}
     </GameContext.Provider>
