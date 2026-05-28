@@ -7,11 +7,79 @@
 
 .header {
   display: flex;
-  justify-content: space-around;
-  padding: 15px;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 20px;
   background-color: var(--bg-card);
   border-bottom: 1px solid #333;
   z-index: 10;
+}
+
+.header-left {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.date-display {
+  font-size: 0.85rem;
+  font-weight: bold;
+  color: var(--accent);
+}
+
+.energy-bar-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.energy-bg {
+  width: 80px;
+  height: 6px;
+  background: #333;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.energy-fill {
+  height: 100%;
+  background: #ffeb3b;
+  box-shadow: 0 0 8px rgba(255, 235, 59, 0.4);
+  transition: width 0.3s ease;
+}
+
+.energy-text {
+  font-size: 0.7rem;
+  font-weight: bold;
+  color: #888;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.next-week-btn {
+  background: #4caf50;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-weight: bold;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.next-week-btn:hover {
+  background: #45a049;
+  transform: scale(1.05);
+}
+
+.next-week-btn:active {
+  transform: scale(0.95);
 }
 
 .stat {
@@ -56,15 +124,20 @@
   flex: 1;
 }
 
-.bottom-nav button.active {
-  color: var(--primary);
+.bottom-nav button.locked-nav {
+  opacity: 0.5;
+}
+
+.bottom-nav button.locked-nav .nav-icon {
+  filter: grayscale(1);
 }
 
 .bottom-nav .nav-icon {
-  font-size: 1.5rem;
+  font-size: 1.25rem;
 }
 
 .bottom-nav .nav-label {
-  font-size: 0.75rem;
+  font-size: 0.6rem;
   font-weight: 500;
+  white-space: nowrap;
 }
