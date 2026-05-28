@@ -32,6 +32,7 @@ const App: React.FC = () => {
 
   return (
     <div className="app-container">
+      <div className="titlebar-drag-region"></div>
       <header className="header">
         <div className="header-left">
           <div className="date-display">📅 {date}</div>

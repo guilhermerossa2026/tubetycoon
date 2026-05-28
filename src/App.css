@@ -5,6 +5,15 @@
   background-color: var(--bg);
 }
 
+.titlebar-drag-region {
+  height: 32px;
+  background-color: var(--bg-card);
+  -webkit-app-region: drag;
+  flex-shrink: 0;
+  border-bottom: 1px solid #121212;
+  display: block;
+}
+
 .header {
   display: flex;
   justify-content: space-between;
