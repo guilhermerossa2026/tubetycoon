@@ -448,12 +448,14 @@ const Shop: React.FC = () => {
           align-items: flex-end;
           text-align: right;
           justify-content: center;
+          padding-right: 16px;
         }
 
         @media (max-width: 900px) {
           .profile-fortune-box {
             align-items: flex-start;
             text-align: left;
+            padding-right: 0;
           }
         }
 
