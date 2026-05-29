@@ -8,9 +8,10 @@ const WeeklyReport: React.FC = () => {
   if (!weeklyReport.isVisible) return null;
 
   const formatNumber = (num: number) => {
-    if (Math.abs(num) >= 1000000) return (num / 1000000).toFixed(2) + 'M';
-    if (Math.abs(num) >= 1000) return (num / 1000).toFixed(2) + 'K';
-    return Math.floor(num).toLocaleString();
+    const absVal = Math.abs(num);
+    if (absVal >= 1000000) return (num / 1000000).toFixed(2) + 'M';
+    if (absVal >= 1000) return (num / 1000).toFixed(2) + 'K';
+    return num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   };
 
   const maxProfitVal = weeklyReport.dreData && weeklyReport.dreData.length > 0
@@ -115,8 +116,14 @@ const WeeklyReport: React.FC = () => {
                     <span>Custos Moradia/Aluguel:</span>
                     <span className="val-down">-${weeklyReport.housingExpenses.toFixed(2)}</span>
                   </div>
+                  {weeklyReport.dividendEarnings !== undefined && weeklyReport.dividendEarnings > 0 && (
+                    <div className="pf-summary-item">
+                      <span>Proventos de Investimento:</span>
+                      <span className="val-up">+${weeklyReport.dividendEarnings.toFixed(2)}</span>
+                    </div>
+                  )}
                   <div className="pf-summary-item">
-                    <span>Variação de Ações:</span>
+                    <span>Variação de Ações (Não Realizado):</span>
                     <span className={weeklyReport.investmentChange >= 0 ? 'val-up' : 'val-down'}>
                       {weeklyReport.investmentChange >= 0 ? '+' : ''}${weeklyReport.investmentChange.toFixed(2)}
                     </span>

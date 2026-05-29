@@ -2,7 +2,16 @@ import React, { useState } from 'react';
 import { useGame } from '../context/GameContext';
 
 const Investments: React.FC = () => {
-  const { investments, money, buyInvestment, sellInvestment, currentMarketEvent } = useGame();
+  const { 
+    investments, 
+    money, 
+    buyInvestment, 
+    sellInvestment, 
+    currentMarketEvent,
+    investmentWallet,
+    depositToInvestmentWallet,
+    withdrawFromInvestmentWallet
+  } = useGame();
   const [activeCategory, setActiveCategory] = useState<'all' | 'stock' | 'crypto' | 'fii' | 'fixed'>('all');
   const [amounts, setAmounts] = useState<{ [key: string]: number }>({});
 
@@ -26,7 +35,7 @@ const Investments: React.FC = () => {
 
   const setMaxAmount = (id: string, type: 'buy' | 'sell', price: number, owned: number) => {
     if (type === 'buy') {
-      const maxBuy = Math.floor(money / price);
+      const maxBuy = Math.floor(investmentWallet / price);
       setAmounts(prev => ({ ...prev, [id]: Math.max(1, maxBuy) }));
     } else {
       setAmounts(prev => ({ ...prev, [id]: Math.max(1, owned) }));
@@ -149,15 +158,68 @@ const Investments: React.FC = () => {
 
           <div className="portfolio-liquid-cash">
             <div className="cash-item">
-              <span className="lbl">Caixa PF Disponível:</span>
-              <strong className="text-green">${formatNumber(money)}</strong>
+              <span className="lbl">Caixa da Carteira (Corretora):</span>
+              <strong className="text-gold">${formatNumber(investmentWallet)}</strong>
             </div>
             <div className="cash-item">
-              <span className="lbl">Renda Fixa & FIIs (Estimado/semana):</span>
+              <span className="lbl">Caixa Pessoal PF:</span>
+              <strong className={money >= 0 ? 'text-green' : 'text-red'}>
+                {money < 0 ? '-' : ''}${formatNumber(Math.abs(money))}
+              </strong>
+            </div>
+            <div className="cash-item">
+              <span className="lbl">Estimado/semana FII + RF:</span>
               <strong className="text-blue">
                 +${formatNumber(investments.reduce((sum, i) => sum + (i.owned * i.price * (i.dividendYield || 0)), 0))}
               </strong>
             </div>
+          </div>
+
+          {/* Transfer Box */}
+          <div className="transfer-box">
+            <h4>🔄 Movimentar Recursos</h4>
+            <div className="transfer-input-row">
+              <input 
+                type="number" 
+                placeholder="Valor $" 
+                id="transfer-amount"
+                min="1"
+                className="transfer-input"
+              />
+              <div className="transfer-buttons">
+                <button 
+                  className="btn-transfer deposit"
+                  onClick={() => {
+                    const el = document.getElementById('transfer-amount') as HTMLInputElement;
+                    const val = parseFloat(el?.value || '0');
+                    if (val > 0) {
+                      depositToInvestmentWallet(val);
+                      if (el) el.value = '';
+                    } else {
+                      alert("Digite um valor válido para depositar!");
+                    }
+                  }}
+                >
+                  📥 Depositar na Corretora
+                </button>
+                <button 
+                  className="btn-transfer withdraw"
+                  onClick={() => {
+                    const el = document.getElementById('transfer-amount') as HTMLInputElement;
+                    const val = parseFloat(el?.value || '0');
+                    if (val > 0) {
+                      withdrawFromInvestmentWallet(val);
+                      if (el) el.value = '';
+                    } else {
+                      alert("Digite um valor válido para resgatar!");
+                    }
+                  }}
+                >
+                  📤 Resgatar para PF
+                </button>
+              </div>
+            </div>
+            <small className="transfer-note">Transfira saldo para a corretora para operar e receber dividendos!</small>
           </div>
 
           {/* Allocation Breakdown Chart */}
@@ -233,7 +295,7 @@ const Investments: React.FC = () => {
               const isUp = priceChange >= 0;
               const amount = amounts[inv.id] || 1;
               const cost = inv.price * amount;
-              const canAfford = money >= cost;
+              const canAfford = investmentWallet >= cost;
 
               // Individual asset metrics
               const assetCost = inv.owned * (inv.averagePrice || 0);
@@ -505,6 +567,95 @@ const Investments: React.FC = () => {
         .text-green { color: #10b981; }
         .text-blue { color: #60a5fa; }
         .text-red { color: #ef4444; }
+        .transfer-box {
+          background: rgba(255,255,255,0.02);
+          border: 1px solid rgba(255,255,255,0.04);
+          border-radius: 12px;
+          padding: 14px;
+          margin-bottom: 24px;
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+        }
+
+        .transfer-box h4 {
+          font-size: 0.82rem;
+          font-weight: 800;
+          color: white;
+          margin: 0;
+        }
+
+        .transfer-input-row {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+        }
+
+        .transfer-input {
+          background: rgba(0,0,0,0.3);
+          border: 1px solid rgba(255,255,255,0.1);
+          border-radius: 6px;
+          padding: 8px 12px;
+          color: white;
+          font-size: 0.85rem;
+          font-weight: bold;
+          outline: none;
+          text-align: center;
+        }
+
+        .transfer-input::placeholder {
+          color: #505060;
+        }
+
+        .transfer-buttons {
+          display: flex;
+          gap: 6px;
+        }
+
+        .btn-transfer {
+          flex: 1;
+          border: none;
+          border-radius: 6px;
+          padding: 8px;
+          font-size: 0.72rem;
+          font-weight: 800;
+          cursor: pointer;
+          color: white;
+          transition: all 0.2s;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 4px;
+        }
+
+        .btn-transfer.deposit {
+          background: rgba(245,158,11,0.12);
+          color: #fbbf24;
+          border: 1px solid rgba(245,158,11,0.25);
+        }
+
+        .btn-transfer.deposit:hover {
+          background: #f59e0b;
+          color: black;
+        }
+
+        .btn-transfer.withdraw {
+          background: rgba(59,130,246,0.12);
+          color: #60a5fa;
+          border: 1px solid rgba(59,130,246,0.25);
+        }
+
+        .btn-transfer.withdraw:hover {
+          background: #3b82f6;
+          color: white;
+        }
+
+        .transfer-note {
+          font-size: 0.65rem;
+          color: #606070;
+          text-align: center;
+          line-height: 1.3;
+        }
 
         /* Allocation Horizontal bars representation */
         .allocation-box h4 {

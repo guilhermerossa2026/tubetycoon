@@ -197,7 +197,7 @@ const CreateVideo: React.FC = () => {
           {/* Jobs Sidebar ("O Corre") */}
           <section className="outside-work-section">
             <div className="section-header">
-              <h3>💸 Trabalhos Extras (O "Corre")</h3>
+              <h3>💸 Trabalhos Extras</h3>
               <p>Trabalhe por fora para cobrir despesas e expandir seu canal.</p>
             </div>
             

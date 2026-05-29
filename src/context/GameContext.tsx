@@ -191,6 +191,7 @@ export interface WeeklyReport {
   youtubeEarnings: number;
   companyEarnings: number; // Sum of PJ net profits
   investmentChange: number;
+  dividendEarnings?: number; // Dividendos em dinheiro da carteira
   expenses: number;
   housingExpenses: number;
   netTotal: number;
@@ -264,6 +265,8 @@ export interface GameContextType extends GameState {
   signCreatorCollab: (companyId: string, creatorName: string) => void;
   negotiateAgencyContract: (talent: Talent, commission: number, signingFee: number) => void;
   currentMarketEvent: { title: string; desc: string; type: 'bull' | 'bear' | 'hype' | 'neutral'; assetId?: string } | null;
+  depositToInvestmentWallet: (amount: number) => void;
+  withdrawFromInvestmentWallet: (amount: number) => void;
 }
 
 export interface GameState {
@@ -295,6 +298,7 @@ export interface GameState {
   currentMarketEvent: { title: string; desc: string; type: 'bull' | 'bear' | 'hype' | 'neutral'; assetId?: string } | null;
   courses: { [key: string]: number };
   luxuryAssets: string[];
+  investmentWallet: number; // Caixa exclusivo para investimentos/dividendos
 }
 
 // --- STATIC CONFIGURATIONS ---
@@ -662,6 +666,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
   });
 
   const [currentMarketEvent, setCurrentMarketEvent] = useState<{ title: string; desc: string; type: 'bull' | 'bear' | 'hype' | 'neutral'; assetId?: string } | null>(null);
+  const [investmentWallet, setInvestmentWallet] = useState(0);
 
   const formatDate = (w: number) => {
     const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
@@ -678,7 +683,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const publishVideo = (data: PublishVideoData) => {
-    const energyCosts = { vlog: 20, games: 25, pov: 15, challenge: 40, trend: 30, dance: 20, music: 50 };
+    const energyCosts = { vlog: 30, games: 35, pov: 30, challenge: 50, trend: 40, dance: 30, music: 60 };
     let cost = energyCosts[data.category];
 
     if (boughtHousingUpgrades.includes('acustica')) {
@@ -1678,6 +1683,8 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     if (totalDividends > 0) {
+      setInvestmentWallet(prev => Number((prev + totalDividends).toFixed(2)));
+
       dreDataList.push({
         name: "Dividendos & Rendimentos",
         revenue: totalDividends,
@@ -1689,7 +1696,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       weekEvents.push({
         title: "💰 DIVIDENDOS RECEBIDOS",
-        desc: `Você recebeu $${totalDividends.toFixed(2)} em proventos passivos da sua carteira de investimentos!`,
+        desc: `Você recebeu $${totalDividends.toFixed(2)} em proventos passivos depositados na sua Conta Corretora!`,
         type: 'positive'
       });
     }
@@ -1698,7 +1705,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const activeUpgradesList = HOUSING_UPGRADES.filter(u => boughtHousingUpgrades.includes(u.id));
     const upgradesExpenses = activeUpgradesList.reduce((sum, u) => sum + u.weeklyMaintenance, 0);
     const housingExpenses = housing.weeklyRent + upgradesExpenses;
-    const netPFIncome = weekYoutubeEarnings + weekAgencyEarnings + cryptoPassivePFIncome + totalDividends - housingExpenses;
+    const netPFIncome = weekYoutubeEarnings + weekAgencyEarnings + cryptoPassivePFIncome - housingExpenses;
 
     // Apply PF Money update
     setMoney(prev => Number((prev + netPFIncome).toFixed(2)));
@@ -1729,6 +1736,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
       youtubeEarnings: weekYoutubeEarnings,
       companyEarnings: totalCompanyEarnings, // PJ profits
       investmentChange: invChange,
+      dividendEarnings: totalDividends,
       expenses: 0,
       housingExpenses,
       netTotal: netPFIncome + totalCompanyEarnings,
@@ -1891,8 +1899,8 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const inv = investments.find(i => i.id === id);
     if (!inv) return;
     const cost = inv.price * amount;
-    if (money >= cost) {
-      setMoney(prev => prev - cost);
+    if (investmentWallet >= cost) {
+      setInvestmentWallet(prev => Number((prev - cost).toFixed(2)));
       setInvestments(prev => prev.map(i => {
         if (i.id === id) {
           const prevOwned = i.owned;
@@ -1907,6 +1915,8 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
         return i;
       }));
+    } else {
+      alert("Saldo insuficiente no caixa da Carteira! Transfira dinheiro da sua conta pessoal PF primeiro.");
     }
   };
 
@@ -1914,7 +1924,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const inv = investments.find(i => i.id === id);
     if (!inv || inv.owned < amount) return;
     const gain = inv.price * amount;
-    setMoney(prev => prev + gain);
+    setInvestmentWallet(prev => Number((prev + gain).toFixed(2)));
     setInvestments(prev => prev.map(i => {
       if (i.id === id) {
         const newOwned = i.owned - amount;
@@ -1928,11 +1938,30 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }));
   };
 
+  const depositToInvestmentWallet = (amount: number) => {
+    if (money >= amount) {
+      setMoney(prev => Number((prev - amount).toFixed(2)));
+      setInvestmentWallet(prev => Number((prev + amount).toFixed(2)));
+    } else {
+      alert("Saldo insuficiente em sua conta pessoal PF!");
+    }
+  };
+
+  const withdrawFromInvestmentWallet = (amount: number) => {
+    if (investmentWallet >= amount) {
+      setInvestmentWallet(prev => Number((prev - amount).toFixed(2)));
+      setMoney(prev => Number((prev + amount).toFixed(2)));
+    } else {
+      alert("Saldo insuficiente na sua carteira de investimentos!");
+    }
+  };
+
   return (
     <GameContext.Provider value={{
       money, subscribers, totalViews, energy, maxEnergy, week, date: formatDate(week), 
       upgrades, currentHousingId, videoHistory, investments, agency, weeklyReport,
       companies, totalTaxesPaid, cryptoToken, currentMarketEvent,
+      investmentWallet, depositToInvestmentWallet, withdrawFromInvestmentWallet,
       housings: HOUSINGS,
       outsideWorks: OUTSIDE_WORKS,
       stats: { viewsPerClick: 10, subGainRate: 0.05, moneyPerView: 0.01 },
