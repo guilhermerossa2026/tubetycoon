@@ -22,6 +22,16 @@ export interface Housing {
   minCompanyLevel?: boolean;
 }
 
+export interface HousingUpgrade {
+  id: string;
+  name: string;
+  price: number;
+  weeklyMaintenance: number;
+  description: string;
+  icon: string;
+  bonusText: string;
+}
+
 export interface Video {
   id: string;
   title: string;
@@ -40,6 +50,7 @@ export interface Video {
     companyId: string;
     productId: string;
   } | null;
+  communityBonus?: 'views' | 'ctr' | 'subs' | null;
 }
 
 export interface Investment {
@@ -221,6 +232,10 @@ export interface GameContextType extends GameState {
   closeReport: () => void;
   housings: Housing[];
   outsideWorks: OutsideWork[];
+  boughtHousingUpgrades: string[];
+  buyHousingUpgrade: (id: string) => void;
+  updateChannelProfile: (name: string, handle: string, desc: string) => void;
+  makeCommunityPost: (type: 'meme' | 'spoiler' | 'thanks') => void;
   
   // PJ Holdings & Web3 Operations
   foundCompany: (niche: 'merch' | 'candy' | 'food' | 'tech', name: string, taxRegime: 'real' | 'simples') => void;
@@ -262,6 +277,11 @@ export interface GameState {
   companies: CompanyState[];
   totalTaxesPaid: number;
   cryptoToken: CryptoTokenState | null;
+  boughtHousingUpgrades: string[];
+  channelName: string;
+  channelHandle: string;
+  channelDescription: string;
+  communityPostBonus: { type: 'views' | 'ctr' | 'subs'; amount: number } | null;
 }
 
 // --- STATIC CONFIGURATIONS ---
@@ -403,6 +423,13 @@ const HOUSINGS: Housing[] = [
   { id: 'studio', name: 'Estúdio Gamer de Elite', entryCost: 1000000, weeklyRent: 20000, viewMultiplier: 2.2, energyBonus: 100, description: 'Prédio tecnológico para gerenciar marcas, parcerias e seu canal.', minCompanyLevel: true },
 ];
 
+export const HOUSING_UPGRADES: HousingUpgrade[] = [
+  { id: 'fibra', name: 'Internet Fibra 1GB', price: 1500, weeklyMaintenance: 50, description: 'Velocidade extrema de conexão para postagens instantâneas.', icon: '🌐', bonusText: '+10% views em Games, Vlog e POV' },
+  { id: 'acustica', name: 'Isolamento Acústico', price: 3000, weeklyMaintenance: 20, description: 'Tratamento acústico de estúdio profissional com espumas.', icon: '🎙️', bonusText: '-5 de custo de energia para todos os vídeos' },
+  { id: 'rgb', name: 'Painel Neon RGB', price: 2000, weeklyMaintenance: 30, description: 'Iluminação futurista configurável para o cenário de gravação.', icon: '💡', bonusText: '+15% views em Dança, Trend e Desafios' },
+  { id: 'cafe', name: 'Cafeteira Expresso Pro', price: 4000, weeklyMaintenance: 40, description: 'Cafés gourmet italianos de altíssima octanagem e sabor.', icon: '☕', bonusText: '+10 Energia Máxima Permanente' }
+];
+
 const OUTSIDE_WORKS: OutsideWork[] = [
   { id: 'delivery', name: 'Entregador de App', pay: 50, energyCost: 20, minSubs: 0 },
   { id: 'freelancer', name: 'Editor Freelancer', pay: 250, energyCost: 40, minSubs: 5000 },
@@ -532,12 +559,18 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [week, setWeek] = useState(1);
   const [upgrades, setUpgrades] = useState<Upgrade[]>(INITIAL_UPGRADES);
   const [currentHousingId, setCurrentHousingId] = useState('parents');
+  const [boughtHousingUpgrades, setBoughtHousingUpgrades] = useState<string[]>([]);
   const [videoHistory, setVideoHistory] = useState<Video[]>([]);
   const [investments, setInvestments] = useState<Investment[]>(INITIAL_INVESTMENTS);
   const [agency, setAgency] = useState<AgencyState>(INITIAL_AGENCY);
   const [companies, setCompanies] = useState<CompanyState[]>(INITIAL_COMPANIES);
   const [totalTaxesPaid, setTotalTaxesPaid] = useState(0);
   const [cryptoToken, setCryptoToken] = useState<CryptoTokenState | null>(null);
+  
+  const [channelName, setChannelName] = useState('Seu Canal');
+  const [channelHandle, setChannelHandle] = useState('novo_user');
+  const [channelDescription, setChannelDescription] = useState('Bem-vindo ao meu império! Aqui você encontra os melhores conteúdos.');
+  const [communityPostBonus, setCommunityPostBonus] = useState<{ type: 'views' | 'ctr' | 'subs'; amount: number } | null>(null);
 
   const [weeklyReport, setWeeklyReport] = useState<WeeklyReport>({
     views: 0, subscribers: 0, youtubeEarnings: 0, companyEarnings: 0, investmentChange: 0, expenses: 0, housingExpenses: 0, netTotal: 0, isVisible: false, events: [], dreData: []
@@ -559,7 +592,11 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const publishVideo = (data: PublishVideoData) => {
     const energyCosts = { vlog: 20, games: 25, pov: 15, challenge: 40, trend: 30, dance: 20, music: 50 };
-    const cost = energyCosts[data.category];
+    let cost = energyCosts[data.category];
+
+    if (boughtHousingUpgrades.includes('acustica')) {
+      cost = Math.max(5, cost - 5);
+    }
 
     if (energy < cost) {
       alert("Você está exausto! Passe a semana para recuperar as energias.");
@@ -582,8 +619,11 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
       isPromoted: data.isPromoted,
       date: Date.now(),
       weeksActive: 0,
-      selfPromotion: data.selfPromotion || null
+      selfPromotion: data.selfPromotion || null,
+      communityBonus: communityPostBonus ? communityPostBonus.type : null
     };
+
+    setCommunityPostBonus(null);
 
     if (data.isPromoted) {
       setMoney(prev => prev - data.promotionCost);
@@ -1092,7 +1132,21 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       // Promotion penalization
       const promotionalPenalty = video.selfPromotion ? 0.90 : 1.0;
-      const generatedViews = Math.floor(baseViews * categoryMultipliers[video.category] * promoMultiplier * performanceFactor * housing.viewMultiplier * promotionalPenalty);
+
+      let customMultiplier = 1.0;
+      if (boughtHousingUpgrades.includes('fibra') && ['games', 'vlog', 'pov'].includes(video.category)) {
+        customMultiplier *= 1.10;
+      }
+      if (boughtHousingUpgrades.includes('rgb') && ['dance', 'trend', 'challenge'].includes(video.category)) {
+        customMultiplier *= 1.15;
+      }
+      if (video.communityBonus === 'views') {
+        customMultiplier *= 1.15;
+      } else if (video.communityBonus === 'ctr') {
+        customMultiplier *= 1.25;
+      }
+
+      const generatedViews = Math.floor(baseViews * categoryMultipliers[video.category] * promoMultiplier * performanceFactor * housing.viewMultiplier * promotionalPenalty * customMultiplier);
 
       let baseRPM = 0.5;
       if (subscribers >= 1000000) baseRPM = 15.0;
@@ -1413,7 +1467,9 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     // D. Final weekly compilation for Personal (PF) Cash
-    const housingExpenses = housing.weeklyRent;
+    const activeUpgradesList = HOUSING_UPGRADES.filter(u => boughtHousingUpgrades.includes(u.id));
+    const upgradesExpenses = activeUpgradesList.reduce((sum, u) => sum + u.weeklyMaintenance, 0);
+    const housingExpenses = housing.weeklyRent + upgradesExpenses;
     const netPFIncome = weekYoutubeEarnings + weekAgencyEarnings + cryptoPassivePFIncome - housingExpenses;
 
     // Apply PF Money update
@@ -1474,10 +1530,60 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (money >= housing.entryCost) {
       setMoney(prev => prev - housing.entryCost);
       setCurrentHousingId(id);
+      setBoughtHousingUpgrades([]);
       setMaxEnergy(100 + housing.energyBonus);
       alert(`Parabéns! Você se mudou para: ${housing.name}`);
     } else {
       alert("Você não tem dinheiro suficiente para a entrada/caução!");
+    }
+  };
+
+  const buyHousingUpgrade = (upgradeId: string) => {
+    const upgrade = HOUSING_UPGRADES.find(u => u.id === upgradeId);
+    if (!upgrade) return;
+    if (boughtHousingUpgrades.includes(upgradeId)) {
+      alert("Você já possui esta melhoria instalada!");
+      return;
+    }
+    
+    if (money >= upgrade.price) {
+      setMoney(prev => prev - upgrade.price);
+      setBoughtHousingUpgrades(prev => [...prev, upgradeId]);
+      if (upgradeId === 'cafe') {
+        setMaxEnergy(prev => prev + 10);
+        setEnergy(prev => prev + 10);
+      }
+      alert(`Sucesso! Você instalou: ${upgrade.name}`);
+    } else {
+      alert("Saldo insuficiente para comprar esta melhoria!");
+    }
+  };
+
+  const updateChannelProfile = (name: string, handle: string, desc: string) => {
+    if (name.trim()) setChannelName(name.trim());
+    if (handle.trim()) setChannelHandle(handle.trim().replace('@', ''));
+    if (desc.trim()) setChannelDescription(desc.trim());
+    alert("Perfil do canal atualizado com sucesso!");
+  };
+
+  const makeCommunityPost = (type: 'meme' | 'spoiler' | 'thanks') => {
+    if (energy < 5) {
+      alert("Você não tem energia suficiente para postar na comunidade (Custo: 5 ⚡)!");
+      return;
+    }
+
+    setEnergy(prev => Math.max(0, prev - 5));
+
+    if (type === 'meme') {
+      setCommunityPostBonus({ type: 'views', amount: 0.15 });
+      alert("Meme compartilhado! A empolgação da comunidade dará +15% views no próximo vídeo! 🎭");
+    } else if (type === 'spoiler') {
+      setCommunityPostBonus({ type: 'ctr', amount: 0.25 });
+      alert("Spoiler revelado! O mistério deixará os inscritos ansiosos: +25% views no próximo vídeo! 🎬");
+    } else if (type === 'thanks') {
+      const bonusSubs = Math.floor(subscribers * 0.02) + 50;
+      setSubscribers(prev => prev + bonusSubs);
+      alert(`Agradecimento sincero publicado! Os fãs amaram a atenção: +${bonusSubs.toLocaleString()} inscritos novos! ❤️`);
     }
   };
 
@@ -1529,6 +1635,14 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
       buyInvestment, sellInvestment,
       createAgency, hireTalent: () => {}, fireTalent,
       nextWeek, closeReport,
+      boughtHousingUpgrades,
+      buyHousingUpgrade,
+      channelName,
+      channelHandle,
+      channelDescription,
+      communityPostBonus,
+      updateChannelProfile,
+      makeCommunityPost,
       
       // PJ Holdings & Web3 Operations
       foundCompany,
