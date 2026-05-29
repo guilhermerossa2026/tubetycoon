@@ -1878,7 +1878,12 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const asset = LUXURY_ASSETS.find(a => a.id === assetId);
       return sum + (asset ? asset.price : 0);
     }, 0);
-    return money + assetsVal;
+
+    const investmentsVal = investments.reduce((sum, inv) => {
+      return sum + (inv.owned * inv.price);
+    }, 0);
+
+    return Number((money + investmentWallet + investmentsVal + assetsVal).toFixed(2));
   };
 
   const workOutside = (id: string) => {
