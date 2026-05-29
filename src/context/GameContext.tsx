@@ -525,9 +525,13 @@ const INITIAL_INVESTMENTS: Investment[] = [
   // FUNDOS IMOBILIÁRIOS (FIIs - Dividendos Semanais em Caixa)
   { id: 'reit', name: 'FII Logística Global', symbol: 'REIT11', price: 100.00, previousPrice: 100.00, type: 'fii', owned: 0, averagePrice: 0, history: [98.5, 101.2, 99.8, 100.5, 99.2, 100.0, 100.0, 100.0], dividendYield: 0.0040 }, // 0.4% semanal
   { id: 'mall', name: 'FII Shopping Centers', symbol: 'MALL11', price: 80.00, previousPrice: 80.00, type: 'fii', owned: 0, averagePrice: 0, history: [78.2, 81.5, 79.0, 80.8, 79.2, 80.0, 80.0, 80.0], dividendYield: 0.0050 }, // 0.5% semanal
+  { id: 'office', name: 'FII Lajes Corporativas', symbol: 'OFFI11', price: 120.00, previousPrice: 120.00, type: 'fii', owned: 0, averagePrice: 0, history: [118.5, 121.0, 119.5, 120.8, 119.0, 120.0, 120.0, 120.0], dividendYield: 0.0045 }, // 0.45% semanal
+  { id: 'agro', name: 'FII Fiagro Agronegócio', symbol: 'AGRO11', price: 90.00, previousPrice: 90.00, type: 'fii', owned: 0, averagePrice: 0, history: [88.5, 91.2, 89.0, 90.5, 89.5, 90.0, 90.0, 90.0], dividendYield: 0.0055 }, // 0.55% semanal
 
   // RENDA FIXA (Retorno garantido e estável, volatilidade zero!)
-  { id: 'selic', name: 'Tesouro Selic Pós', symbol: 'SELIC', price: 1.00, previousPrice: 1.00, type: 'fixed', owned: 0, averagePrice: 0, history: [0.987, 0.989, 0.991, 0.993, 0.995, 0.997, 0.999, 1.00], dividendYield: 0.0018 } // +0.18% semanal fixo
+  { id: 'selic', name: 'Tesouro Selic Pós', symbol: 'SELIC', price: 1.00, previousPrice: 1.00, type: 'fixed', owned: 0, averagePrice: 0, history: [0.987, 0.989, 0.991, 0.993, 0.995, 0.997, 0.999, 1.00], dividendYield: 0.0018 }, // +0.18% semanal fixo
+  { id: 'cdb', name: 'CDB 102% Liquidez Diária', symbol: 'CDB', price: 1.00, previousPrice: 1.00, type: 'fixed', owned: 0, averagePrice: 0, history: [0.985, 0.987, 0.989, 0.991, 0.993, 0.995, 0.997, 1.00], dividendYield: 0.0021 }, // +0.21% semanal fixo
+  { id: 'ipca', name: 'Tesouro IPCA+ Inflação', symbol: 'IPCA', price: 10.00, previousPrice: 10.00, type: 'fixed', owned: 0, averagePrice: 0, history: [9.82, 9.85, 9.87, 9.90, 9.92, 9.95, 9.97, 10.00], dividendYield: 0.0025 } // +0.25% semanal fixo
 ];
 
 const INITIAL_AGENCY: AgencyState = {
