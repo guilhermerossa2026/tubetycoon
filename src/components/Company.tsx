@@ -27,7 +27,8 @@ const Company: React.FC = () => {
     buybackBankruptCompany,
     startMarketingCampaign,
     signCreatorCollab,
-    negotiateAgencyContract
+    negotiateAgencyContract,
+    talentMarket
   } = useGame();
 
   // Navigation sub-tabs
@@ -80,34 +81,7 @@ const Company: React.FC = () => {
     return '#e74c3c';
   };
 
-  // Generate random talent for Agency Negotiation list
-  const getTalentOptions = (): Talent[] => {
-    const potentials = ['S', 'A', 'B', 'C'] as const;
-    const names = ["Gabriel", "Juliana", "Felipe", "Mariana", "Lucas", "Beatriz", "Pedro", "Luana"];
-    const niches = ['gaming', 'lifestyle', 'tech', 'asmr', 'beauty', 'finance'] as const;
 
-    return potentials.map((pot, idx) => {
-      const niche = niches[idx % niches.length];
-      const subs = Math.floor(10000 * (idx + 1) * (pot === 'S' ? 5 : pot === 'A' ? 3 : 1));
-      return {
-        id: `agency_market_${pot}_${idx}`,
-        name: `${names[idx % names.length]} #${Math.floor(Math.random() * 900 + 100)}`,
-        niche,
-        charisma: pot === 'S' ? 88 : pot === 'A' ? 76 : pot === 'B' ? 62 : 48,
-        consistency: 0.8,
-        creativity: pot === 'S' ? 90 : pot === 'A' ? 78 : pot === 'B' ? 64 : 50,
-        engagement: 6.5,
-        reputation: 60,
-        ego: pot === 'S' ? 80 : 45,
-        potential: pot,
-        burnout: 0,
-        subscribers: subs,
-        totalViews: subs * 15,
-        contract: null,
-        brands: []
-      };
-    });
-  };
 
   const getExpectations = (talent: Talent) => {
     const baseSigningExpectation = talent.subscribers * 0.1 * (talent.potential === 'S' ? 5 : talent.potential === 'A' ? 3 : 1) + 1000;
@@ -651,26 +625,32 @@ const Company: React.FC = () => {
                   <div className="talents-market-panel">
                     <h5>Mercado de Creators Livres (Disponíveis)</h5>
                     <div className="market-creators-list">
-                      {getTalentOptions().map(tal => {
-                        const feeExpectation = getExpectations(tal);
-                        
-                        return (
-                          <div key={tal.id} className="market-talent-row">
-                            <div className="opt-desc-tal">
-                              <strong>{tal.name} (Tier {tal.potential})</strong>
-                              <span>Nicho: {tal.niche.toUpperCase()} | Inscritos: {tal.subscribers.toLocaleString()}</span>
+                      {talentMarket.length === 0 ? (
+                        <div className="empty-talents" style={{ textAlign: 'center', padding: '15px', color: '#888' }}>
+                          Nenhum criador disponível esta semana. Novos creators surgirão na próxima semana!
+                        </div>
+                      ) : (
+                        talentMarket.map(tal => {
+                          const feeExpectation = getExpectations(tal);
+                          
+                          return (
+                            <div key={tal.id} className="market-talent-row">
+                              <div className="opt-desc-tal">
+                                <strong>{tal.name} (Tier {tal.potential})</strong>
+                                <span>Nicho: {tal.niche.toUpperCase()} | Inscritos: {tal.subscribers.toLocaleString()}</span>
+                              </div>
+                              <button onClick={() => {
+                                setNegotiatingTalent(tal);
+                                setNegotiatedCom(0.20);
+                                setNegotiatedFee(feeExpectation);
+                                setIsNegotiating(true);
+                              }}>
+                                Entrar em Negociação
+                              </button>
                             </div>
-                            <button onClick={() => {
-                              setNegotiatingTalent(tal);
-                              setNegotiatedCom(0.20);
-                              setNegotiatedFee(feeExpectation);
-                              setIsNegotiating(true);
-                            }}>
-                              Entrar em Negociação
-                            </button>
-                          </div>
-                        );
-                      })}
+                          );
+                        })
+                      )}
                     </div>
                   </div>
                 </div>

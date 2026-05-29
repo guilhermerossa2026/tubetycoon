@@ -267,6 +267,7 @@ export interface GameContextType extends GameState {
   currentMarketEvent: { title: string; desc: string; type: 'bull' | 'bear' | 'hype' | 'neutral'; assetId?: string } | null;
   depositToInvestmentWallet: (amount: number) => void;
   withdrawFromInvestmentWallet: (amount: number) => void;
+  talentMarket: Talent[];
 }
 
 export interface GameState {
@@ -706,6 +707,34 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [companies, setCompanies] = useState<CompanyState[]>(INITIAL_COMPANIES);
   const [totalTaxesPaid, setTotalTaxesPaid] = useState(0);
   const [cryptoToken, setCryptoToken] = useState<CryptoTokenState | null>(null);
+  const [talentMarket, setTalentMarket] = useState<Talent[]>(() => {
+    const potentials = ['S', 'A', 'B', 'C'] as const;
+    const names = ["Gabriel", "Juliana", "Felipe", "Mariana", "Lucas", "Beatriz", "Pedro", "Luana"];
+    const niches = ['gaming', 'lifestyle', 'tech', 'asmr', 'beauty', 'finance'] as const;
+
+    return potentials.map((pot, idx) => {
+      const niche = niches[idx % niches.length];
+      const subs = Math.floor(10000 * (idx + 1) * (pot === 'S' ? 5 : pot === 'A' ? 3 : 1));
+      const randomName = `${names[idx % names.length]} #${Math.floor(Math.random() * 900 + 100)}`;
+      return {
+        id: `agency_market_${pot}_${idx}_${Math.floor(Math.random() * 100000)}`,
+        name: randomName,
+        niche,
+        charisma: pot === 'S' ? 88 : pot === 'A' ? 76 : pot === 'B' ? 62 : 48,
+        consistency: 0.8,
+        creativity: pot === 'S' ? 90 : pot === 'A' ? 78 : pot === 'B' ? 64 : 50,
+        engagement: 6.5,
+        reputation: 60,
+        ego: pot === 'S' ? 80 : 45,
+        potential: pot,
+        burnout: 0,
+        subscribers: subs,
+        totalViews: subs * 15,
+        contract: null,
+        brands: []
+      };
+    });
+  });
   
   const [channelName, setChannelName] = useState('Seu Canal');
   const [channelHandle, setChannelHandle] = useState('novo_user');
@@ -1232,6 +1261,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
         ...prev,
         talents: [...prev.talents, signedTalent]
       }));
+      setTalentMarket(prev => prev.filter(t => t.id !== talent.id));
       alert(`Parceria fechada! ${talent.name} assinou com sua agência! (Aceitação: ${acceptance}%)`);
     } else {
       alert(`${talent.name} recusou a proposta! A oferta de Signing Fee ou a comissão não foram atrativas. (Aceitação: ${acceptance}%)`);
@@ -1769,6 +1799,34 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setEnergy(maxEnergy + housing.energyBonus);
     setWeek(prev => prev + 1);
 
+    // Refresh creators in the market every week
+    const potentialsList = ['S', 'A', 'B', 'C'] as const;
+    const namesList = ["Gabriel", "Juliana", "Felipe", "Mariana", "Lucas", "Beatriz", "Pedro", "Luana"];
+    const nichesList = ['gaming', 'lifestyle', 'tech', 'asmr', 'beauty', 'finance'] as const;
+    const nextMarket = potentialsList.map((pot, idx) => {
+      const niche = nichesList[idx % nichesList.length];
+      const subs = Math.floor(10000 * (idx + 1) * (pot === 'S' ? 5 : pot === 'A' ? 3 : 1)) + Math.floor(Math.random() * 5000);
+      const randomName = `${namesList[Math.floor(Math.random() * namesList.length)]} #${Math.floor(Math.random() * 900 + 100)}`;
+      return {
+        id: `agency_market_${pot}_${idx}_${Math.floor(Math.random() * 100000)}`,
+        name: randomName,
+        niche,
+        charisma: pot === 'S' ? 88 : pot === 'A' ? 76 : pot === 'B' ? 62 : 48,
+        consistency: 0.8,
+        creativity: pot === 'S' ? 90 : pot === 'A' ? 78 : pot === 'B' ? 64 : 50,
+        engagement: 6.5,
+        reputation: 60,
+        ego: pot === 'S' ? 80 : 45,
+        potential: pot,
+        burnout: 0,
+        subscribers: subs,
+        totalViews: subs * 15,
+        contract: null,
+        brands: []
+      };
+    });
+    setTalentMarket(nextMarket);
+
     if (agency.exists) {
       setAgency(prev => ({
         ...prev,
@@ -2058,7 +2116,8 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
       buybackBankruptCompany,
       startMarketingCampaign,
       signCreatorCollab,
-      negotiateAgencyContract
+      negotiateAgencyContract,
+      talentMarket
     }}>
       {children}
     </GameContext.Provider>
