@@ -107,7 +107,7 @@ const App: React.FC = () => {
           onClick={() => handleTabChange('investments')}
         >
           <span className="nav-icon">📈</span>
-          <span className="nav-label">Investir</span>
+          <span className="nav-label">Investimentos</span>
         </button>
         <button 
           className={`${activeTab === 'agency' ? 'active' : ''} ${!isAgencyUnlocked ? 'locked-nav' : ''}`} 

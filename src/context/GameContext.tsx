@@ -60,8 +60,11 @@ export interface Investment {
   symbol: string;
   price: number;
   previousPrice: number;
-  type: 'stock' | 'crypto';
+  type: 'stock' | 'crypto' | 'fii' | 'fixed';
   owned: number;
+  averagePrice?: number;
+  history?: number[];
+  dividendYield?: number;
 }
 
 export interface Contract {
@@ -260,6 +263,7 @@ export interface GameContextType extends GameState {
   startMarketingCampaign: (companyId: string, campaignType: 'instagram' | 'live' | 'dedicated') => void;
   signCreatorCollab: (companyId: string, creatorName: string) => void;
   negotiateAgencyContract: (talent: Talent, commission: number, signingFee: number) => void;
+  currentMarketEvent: { title: string; desc: string; type: 'bull' | 'bear' | 'hype' | 'neutral'; assetId?: string } | null;
 }
 
 export interface GameState {
@@ -288,6 +292,7 @@ export interface GameState {
   channelHandle: string;
   channelDescription: string;
   communityPostBonus: { type: 'views' | 'ctr' | 'subs'; amount: number } | null;
+  currentMarketEvent: { title: string; desc: string; type: 'bull' | 'bear' | 'hype' | 'neutral'; assetId?: string } | null;
   courses: { [key: string]: number };
   luxuryAssets: string[];
 }
@@ -502,11 +507,23 @@ const OUTSIDE_WORKS: OutsideWork[] = [
 ];
 
 const INITIAL_INVESTMENTS: Investment[] = [
-  { id: 'tube', name: 'TubeStock', symbol: 'TUBE', price: 10, previousPrice: 10, type: 'stock', owned: 0 },
-  { id: 'banana', name: 'Banana Corp', symbol: 'BNNA', price: 50, previousPrice: 50, type: 'stock', owned: 0 },
-  { id: 'macro', name: 'Macrosoft', symbol: 'MSFT', price: 250, previousPrice: 250, type: 'stock', owned: 0 },
-  { id: 'bit', name: 'BitCoin', symbol: 'BTC', price: 1000, previousPrice: 1000, type: 'crypto', owned: 0 },
-  { id: 'eth', name: 'Ether', symbol: 'ETH', price: 500, previousPrice: 500, type: 'crypto', owned: 0 },
+  // AÇÕES (Stocks)
+  { id: 'tube', name: 'TubeStock Inc.', symbol: 'TUBE', price: 10.00, previousPrice: 10.00, type: 'stock', owned: 0, averagePrice: 0, history: [10.2, 9.8, 10.1, 9.9, 10.3, 9.7, 10.0, 10.0] },
+  { id: 'banana', name: 'Banana Corp.', symbol: 'BNNA', price: 50.00, previousPrice: 50.00, type: 'stock', owned: 0, averagePrice: 0, history: [47.5, 49.0, 48.2, 51.5, 52.0, 49.8, 50.0, 50.0] },
+  { id: 'macro', name: 'Macrosoft S.A.', symbol: 'MSFT', price: 250.00, previousPrice: 250.00, type: 'stock', owned: 0, averagePrice: 0, history: [244.0, 248.5, 246.0, 252.0, 249.0, 251.5, 250.0, 250.0] },
+  { id: 'gogl', name: 'Goolge Corp.', symbol: 'GOGL', price: 400.00, previousPrice: 400.00, type: 'stock', owned: 0, averagePrice: 0, history: [388.0, 395.0, 402.5, 397.0, 405.0, 396.5, 400.0, 400.0] },
+
+  // CRIPTOMOEDAS (Cryptos)
+  { id: 'bit', name: 'Bitcoin Cash', symbol: 'BTC', price: 1000.00, previousPrice: 1000.00, type: 'crypto', owned: 0, averagePrice: 0, history: [910.0, 1060.0, 975.0, 1120.0, 880.0, 960.0, 1000.0, 1000.0] },
+  { id: 'eth', name: 'Ether Network', symbol: 'ETH', price: 500.00, previousPrice: 500.00, type: 'crypto', owned: 0, averagePrice: 0, history: [455.0, 525.0, 478.0, 545.0, 485.0, 512.0, 500.0, 500.0] },
+  { id: 'doge', name: 'DogCoin Meme', symbol: 'DOGE', price: 0.50, previousPrice: 0.50, type: 'crypto', owned: 0, averagePrice: 0, history: [0.41, 0.63, 0.35, 0.48, 0.56, 0.44, 0.50, 0.50] },
+
+  // FUNDOS IMOBILIÁRIOS (FIIs - Dividendos Semanais em Caixa)
+  { id: 'reit', name: 'FII Logística Global', symbol: 'REIT11', price: 100.00, previousPrice: 100.00, type: 'fii', owned: 0, averagePrice: 0, history: [98.5, 101.2, 99.8, 100.5, 99.2, 100.0, 100.0, 100.0], dividendYield: 0.0040 }, // 0.4% semanal
+  { id: 'mall', name: 'FII Shopping Centers', symbol: 'MALL11', price: 80.00, previousPrice: 80.00, type: 'fii', owned: 0, averagePrice: 0, history: [78.2, 81.5, 79.0, 80.8, 79.2, 80.0, 80.0, 80.0], dividendYield: 0.0050 }, // 0.5% semanal
+
+  // RENDA FIXA (Retorno garantido e estável, volatilidade zero!)
+  { id: 'selic', name: 'Tesouro Selic Pós', symbol: 'SELIC', price: 1.00, previousPrice: 1.00, type: 'fixed', owned: 0, averagePrice: 0, history: [0.987, 0.989, 0.991, 0.993, 0.995, 0.997, 0.999, 1.00], dividendYield: 0.0018 } // +0.18% semanal fixo
 ];
 
 const INITIAL_AGENCY: AgencyState = {
@@ -643,6 +660,8 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [weeklyReport, setWeeklyReport] = useState<WeeklyReport>({
     views: 0, subscribers: 0, youtubeEarnings: 0, companyEarnings: 0, investmentChange: 0, expenses: 0, housingExpenses: 0, netTotal: 0, isVisible: false, events: [], dreData: []
   });
+
+  const [currentMarketEvent, setCurrentMarketEvent] = useState<{ title: string; desc: string; type: 'bull' | 'bear' | 'hype' | 'neutral'; assetId?: string } | null>(null);
 
   const formatDate = (w: number) => {
     const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
@@ -1514,14 +1533,115 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     setCompanies(updatedCompanies);
 
-    // --- 4. INVESTMENTS SIMULATION ---
+    // --- 4. INVESTMENTS SIMULATION (PREMIUM TERMINAL) ---
     let invChange = 0;
+    let totalDividends = 0;
+
+    let marketEvent: { title: string; desc: string; type: 'bull' | 'bear' | 'hype' | 'neutral'; assetId?: string } | null = null;
+    const rollEvent = Math.random();
+    if (rollEvent < 0.07) {
+      marketEvent = {
+        title: "🚀 CRIPTO BULL RUN",
+        desc: "O otimismo atinge a lua! Criptoativos disparam com volume massivo de compras mundiais!",
+        type: 'bull'
+      };
+    } else if (rollEvent < 0.14) {
+      marketEvent = {
+        title: "⚠️ CHOQUE TECNOLÓGICO",
+        desc: "Gargalo severo no fornecimento global de chips semicondutores afeta as Big Techs na bolsa!",
+        type: 'bear'
+      };
+    } else if (rollEvent < 0.20) {
+      marketEvent = {
+        title: "🐶 ELON MEME HYPADO",
+        desc: "Uma postagem viral na internet causa uma corrida especulativa insana pela DogCoin Meme!",
+        assetId: 'doge',
+        type: 'hype'
+      };
+    } else if (rollEvent < 0.26) {
+      marketEvent = {
+        title: "🏢 RECORDES DE OCUPAÇÃO FIIs",
+        desc: "Vacância em galpões logísticos e shoppings atinge mínimas históricas! Proventos sobem!",
+        type: 'bull'
+      };
+    }
+    setCurrentMarketEvent(marketEvent);
+
+    if (marketEvent) {
+      weekEvents.push({
+        title: marketEvent.title,
+        desc: marketEvent.desc,
+        type: marketEvent.type === 'bear' ? 'negative' : 'positive'
+      });
+    }
+
     const updatedInvestments = investments.map(inv => {
-      const volatility = inv.type === 'crypto' ? 0.20 : 0.05;
-      const change = 1 + (Math.random() * volatility * 2 - volatility);
-      const newPrice = Math.max(1, inv.price * change);
-      if (inv.owned > 0) invChange += (newPrice - inv.price) * inv.owned;
-      return { ...inv, previousPrice: inv.price, price: Number(newPrice.toFixed(2)) };
+      let volatility = 0.05;
+      let eventBonus = 0;
+
+      if (inv.type === 'crypto') {
+        volatility = inv.id === 'doge' ? 0.25 : 0.18;
+      } else if (inv.type === 'stock') {
+        volatility = 0.06;
+      } else if (inv.type === 'fii') {
+        volatility = 0.02;
+      } else if (inv.type === 'fixed') {
+        volatility = 0;
+      }
+
+      let change = 1;
+      if (volatility > 0) {
+        change = 1 + (Math.random() * volatility * 2 - volatility);
+      }
+
+      if (marketEvent) {
+        if (marketEvent.type === 'bull') {
+          if (inv.type === 'crypto') {
+            eventBonus = 0.08 + Math.random() * 0.10;
+          } else if (inv.type === 'fii') {
+            eventBonus = 0.03 + Math.random() * 0.03;
+          }
+        } else if (marketEvent.type === 'bear') {
+          if (inv.type === 'stock' && ['banana', 'macro', 'gogl'].includes(inv.id)) {
+            eventBonus = -(0.08 + Math.random() * 0.10);
+          }
+        } else if (marketEvent.type === 'hype') {
+          if (inv.id === marketEvent.assetId) {
+            eventBonus = 0.40 + Math.random() * 0.40;
+          }
+        }
+      }
+
+      let newPrice = inv.price * (change + eventBonus);
+
+      if (inv.type === 'fixed') {
+        newPrice = inv.price * (1 + (inv.dividendYield || 0.0018));
+      }
+
+      newPrice = Math.max(0.01, newPrice);
+
+      if (inv.owned > 0) {
+        invChange += (newPrice - inv.price) * inv.owned;
+        
+        if (inv.type === 'fii') {
+          let yieldBonus = 1.0;
+          if (marketEvent && marketEvent.title.includes("FIIs")) {
+            yieldBonus = 1.3;
+          }
+          const payout = inv.owned * inv.price * (inv.dividendYield || 0.005) * yieldBonus;
+          totalDividends += payout;
+        }
+      }
+
+      const currentHistory = inv.history || [inv.price];
+      const nextHistory = [...currentHistory, Number(newPrice.toFixed(2))].slice(-8);
+
+      return {
+        ...inv,
+        previousPrice: inv.price,
+        price: Number(newPrice.toFixed(2)),
+        history: nextHistory
+      };
     });
     setInvestments(updatedInvestments);
 
@@ -1557,11 +1677,28 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
     }
 
+    if (totalDividends > 0) {
+      dreDataList.push({
+        name: "Dividendos & Rendimentos",
+        revenue: totalDividends,
+        costs: 0,
+        taxes: 0,
+        netProfit: totalDividends,
+        color: '#4caf50'
+      });
+
+      weekEvents.push({
+        title: "💰 DIVIDENDOS RECEBIDOS",
+        desc: `Você recebeu $${totalDividends.toFixed(2)} em proventos passivos da sua carteira de investimentos!`,
+        type: 'positive'
+      });
+    }
+
     // D. Final weekly compilation for Personal (PF) Cash
     const activeUpgradesList = HOUSING_UPGRADES.filter(u => boughtHousingUpgrades.includes(u.id));
     const upgradesExpenses = activeUpgradesList.reduce((sum, u) => sum + u.weeklyMaintenance, 0);
     const housingExpenses = housing.weeklyRent + upgradesExpenses;
-    const netPFIncome = weekYoutubeEarnings + weekAgencyEarnings + cryptoPassivePFIncome - housingExpenses;
+    const netPFIncome = weekYoutubeEarnings + weekAgencyEarnings + cryptoPassivePFIncome + totalDividends - housingExpenses;
 
     // Apply PF Money update
     setMoney(prev => Number((prev + netPFIncome).toFixed(2)));
@@ -1756,7 +1893,20 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const cost = inv.price * amount;
     if (money >= cost) {
       setMoney(prev => prev - cost);
-      setInvestments(prev => prev.map(i => i.id === id ? { ...i, owned: i.owned + amount } : i));
+      setInvestments(prev => prev.map(i => {
+        if (i.id === id) {
+          const prevOwned = i.owned;
+          const prevAvg = i.averagePrice || 0;
+          const newOwned = prevOwned + amount;
+          const newAvg = ((prevOwned * prevAvg) + (amount * i.price)) / newOwned;
+          return {
+            ...i,
+            owned: newOwned,
+            averagePrice: Number(newAvg.toFixed(2))
+          };
+        }
+        return i;
+      }));
     }
   };
 
@@ -1765,14 +1915,24 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!inv || inv.owned < amount) return;
     const gain = inv.price * amount;
     setMoney(prev => prev + gain);
-    setInvestments(prev => prev.map(i => i.id === id ? { ...i, owned: i.owned - amount } : i));
+    setInvestments(prev => prev.map(i => {
+      if (i.id === id) {
+        const newOwned = i.owned - amount;
+        return {
+          ...i,
+          owned: newOwned,
+          averagePrice: newOwned === 0 ? 0 : i.averagePrice
+        };
+      }
+      return i;
+    }));
   };
 
   return (
     <GameContext.Provider value={{
       money, subscribers, totalViews, energy, maxEnergy, week, date: formatDate(week), 
       upgrades, currentHousingId, videoHistory, investments, agency, weeklyReport,
-      companies, totalTaxesPaid, cryptoToken,
+      companies, totalTaxesPaid, cryptoToken, currentMarketEvent,
       housings: HOUSINGS,
       outsideWorks: OUTSIDE_WORKS,
       stats: { viewsPerClick: 10, subGainRate: 0.05, moneyPerView: 0.01 },
