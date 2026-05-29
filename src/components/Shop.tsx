@@ -389,12 +389,12 @@ const Shop: React.FC = () => {
         /* Profile Header */
         .shop-profile-header {
           display: grid;
-          grid-template-columns: 55% 45%;
+          grid-template-columns: 1fr auto;
           gap: 24px;
           background: linear-gradient(135deg, rgba(30,30,38,0.6) 0%, rgba(20,20,25,0.8) 100%);
           padding: 20px;
           border-radius: 16px;
-          border: 1px solid rgba(255,255,255,0.05);
+          border: 1px solid rgba(255, 255, 255, 0.05);
           margin-bottom: 24px;
           backdrop-filter: blur(10px);
         }
