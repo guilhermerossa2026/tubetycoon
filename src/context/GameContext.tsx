@@ -51,6 +51,7 @@ export interface Video {
     productId: string;
   } | null;
   communityBonus?: 'views' | 'ctr' | 'subs' | null;
+  score: number;
 }
 
 export interface Investment {
@@ -236,6 +237,11 @@ export interface GameContextType extends GameState {
   buyHousingUpgrade: (id: string) => void;
   updateChannelProfile: (name: string, handle: string, desc: string) => void;
   makeCommunityPost: (type: 'meme' | 'spoiler' | 'thanks') => void;
+  courses: { [key: string]: number };
+  luxuryAssets: string[];
+  netWorth: number;
+  buyCourseSemester: (courseId: string) => void;
+  buyLuxuryAsset: (assetId: string) => void;
   
   // PJ Holdings & Web3 Operations
   foundCompany: (niche: 'merch' | 'candy' | 'food' | 'tech', name: string, taxRegime: 'real' | 'simples') => void;
@@ -282,6 +288,8 @@ export interface GameState {
   channelHandle: string;
   channelDescription: string;
   communityPostBonus: { type: 'views' | 'ctr' | 'subs'; amount: number } | null;
+  courses: { [key: string]: number };
+  luxuryAssets: string[];
 }
 
 // --- STATIC CONFIGURATIONS ---
@@ -430,6 +438,63 @@ export const HOUSING_UPGRADES: HousingUpgrade[] = [
   { id: 'cafe', name: 'Cafeteira Expresso Pro', price: 4000, weeklyMaintenance: 40, description: 'Cafés gourmet italianos de altíssima octanagem e sabor.', icon: '☕', bonusText: '+10 Energia Máxima Permanente' }
 ];
 
+export interface CourseInfo {
+  id: string;
+  name: string;
+  semesterPrices: number[];
+  description: string;
+  icon: string;
+}
+
+export const COURSES_INFO: CourseInfo[] = [
+  { id: 'storytelling', name: 'Storytelling e Roteiro para Vídeo', semesterPrices: [500, 1000, 1500, 3000], description: 'Domine a arte de prender a atenção com narrativas envolventes.', icon: '📚' },
+  { id: 'marketing', name: 'Marketing Digital + SEO para YouTube', semesterPrices: [800, 1600, 2400, 4800], description: 'Aprenda os segredos do algoritmo, CTR e ranqueamento na busca.', icon: '📈' },
+  { id: 'edicao', name: 'Edição de Vídeo Profissional', semesterPrices: [1200, 2400, 3600, 7200], description: 'Cortes dinâmicos, sonorização premium, efeitos e retenção.', icon: '🎞️' },
+  { id: 'monetizacao', name: 'Monetização e Negócios para Creators', semesterPrices: [2000, 4000, 6000, 12000], description: 'Transforme visualizações em patrocinadores de luxo e marcas PJ.', icon: '💼' }
+];
+
+export interface LuxuryAsset {
+  id: string;
+  name: string;
+  category: 'casas' | 'carros' | 'aviacao' | 'porto' | 'colecoes';
+  price: number;
+  description: string;
+  icon: string;
+}
+
+export const LUXURY_ASSETS: LuxuryAsset[] = [
+  // Casas
+  { id: 'loft', name: 'Loft Compacto no Centro', category: 'casas', price: 30000, description: 'Um espaço moderno e prático no centro da cidade.', icon: '🏢' },
+  { id: 'duplex', name: 'Duplex de Alto Padrão', category: 'casas', price: 150000, description: 'Apartamento de dois andares com vista incrível.', icon: '🏠' },
+  { id: 'cobertura', name: 'Cobertura Triplex', category: 'casas', price: 800000, description: 'Piscina privativa na cobertura e acabamento em mármore.', icon: '🌇' },
+  { id: 'mansao_susp', name: 'Mansão Suspensa na Riviera', category: 'casas', price: 4000000, description: 'Mansão luxuosa de frente para a praia com heliporto.', icon: '🏰' },
+  { id: 'resort', name: 'Resort Privado na Ilha', category: 'casas', price: 25000000, description: 'Uma ilha inteira com resort cinco estrelas exclusivo.', icon: '🏝️' },
+
+  // Carros
+  { id: 'sedan', name: 'Sedan Executivo Alemão', category: 'carros', price: 60000, description: 'Elegância, conforto e motor turbo para o dia a dia.', icon: '🚗' },
+  { id: 'suv', name: 'SUV Esportivo Importado', category: 'carros', price: 200000, description: 'Espaço, luxo e presença imponente nas ruas.', icon: '🚙' },
+  { id: 'supercar', name: 'Supercarro Italiano', category: 'carros', price: 1200000, description: 'Motor V12 que vai de 0 a 100 em 2.9 segundos.', icon: '🏎️' },
+  { id: 'hypercar', name: 'Hypercar Elétrico Exclusivo', category: 'carros', price: 5000000, description: 'Edição limitada de fibra de carbono com 2000 cavalos.', icon: '⚡' },
+
+  // Aviação
+  { id: 'hel_robinson', name: 'Helicóptero Robinson', category: 'aviacao', price: 450000, description: 'Evite o trânsito da cidade voando com praticidade.', icon: '🚁' },
+  { id: 'hel_luxo', name: 'Helicóptero VIP Biturbina', category: 'aviacao', price: 2500000, description: 'Estofamento de grife e isolamento acústico superior.', icon: '🚁' },
+  { id: 'jato_medio', name: 'Jato Executivo Médio', category: 'aviacao', price: 12000000, description: 'Autonomia para voar com total privacidade e conforto.', icon: '✈️' },
+  { id: 'superjato', name: 'Gulfstream Superjato', category: 'aviacao', price: 48000000, description: 'Voe de forma intercontinental com a maior cabine do mercado.', icon: '🛩️' },
+
+  // Porto
+  { id: 'jetski', name: 'Jetski de Corrida 300hp', category: 'porto', price: 25000, description: 'Aceleração brutal na água para os fins de semana.', icon: '🚤' },
+  { id: 'iate_comp', name: 'Iate Compacto Premium', category: 'porto', price: 900000, description: 'Cabine climatizada e espaço gourmet para passar o dia.', icon: '🚢' },
+  { id: 'megaiate', name: 'Megaiate de 100 Metros', category: 'porto', price: 65000000, description: 'Piscina de vidro, heliponto, cinema e garagem de lanchas.', icon: '🛳️' },
+
+  // Coleções
+  { id: 'rolex', name: 'Relógio Suíço Rolex', category: 'colecoes', price: 20000, description: 'O maior símbolo de sucesso tradicional no pulso.', icon: '⌚' },
+  { id: 'richard', name: 'Relógio Richard Mille Raro', category: 'colecoes', price: 350000, description: 'Alta relojoaria de fibra de carbono ultra-esportiva.', icon: '⌚' },
+  { id: 'leao', name: 'Leão Branco de Estimação', category: 'colecoes', price: 180000, description: 'Um felino majestoso que vive no jardim da sua mansão.', icon: '🦁' },
+  { id: 'trex', name: 'Fóssil Completo de T-Rex', category: 'colecoes', price: 1500000, description: 'Um esqueleto real de dinossauro exposto na sua entrada.', icon: '🦖' },
+  { id: 'quadro', name: 'Pintura Clássica Rara', category: 'colecoes', price: 10000000, description: 'Obra de arte original de um mestre renascentista.', icon: '🖼️' }
+];
+
 const OUTSIDE_WORKS: OutsideWork[] = [
   { id: 'delivery', name: 'Entregador de App', pay: 50, energyCost: 20, minSubs: 0 },
   { id: 'freelancer', name: 'Editor Freelancer', pay: 250, energyCost: 40, minSubs: 5000 },
@@ -572,6 +637,9 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [channelDescription, setChannelDescription] = useState('Bem-vindo ao meu império! Aqui você encontra os melhores conteúdos.');
   const [communityPostBonus, setCommunityPostBonus] = useState<{ type: 'views' | 'ctr' | 'subs'; amount: number } | null>(null);
 
+  const [courses, setCourses] = useState<{ [key: string]: number }>({ storytelling: 0, marketing: 0, edicao: 0, monetizacao: 0 });
+  const [luxuryAssets, setLuxuryAssets] = useState<string[]>([]);
+
   const [weeklyReport, setWeeklyReport] = useState<WeeklyReport>({
     views: 0, subscribers: 0, youtubeEarnings: 0, companyEarnings: 0, investmentChange: 0, expenses: 0, housingExpenses: 0, netTotal: 0, isVisible: false, events: [], dreData: []
   });
@@ -605,6 +673,12 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     setEnergy(prev => prev - cost);
 
+    const sumSemesters = Object.values(courses).reduce((a, b) => a + b, 0);
+    const qualityScore = Math.floor((sumSemesters / 16) * 100);
+    const baseRandom = 1 + Math.random() * 5;
+    const qualityBonus = (qualityScore / 100) * 4;
+    const videoScore = Math.min(10, Number((baseRandom + qualityBonus).toFixed(1)));
+
     const newVideo: Video = {
       id: Math.random().toString(36).substring(2, 11),
       title: data.title || `Vídeo #${videoHistory.length + 1}`,
@@ -620,7 +694,8 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
       date: Date.now(),
       weeksActive: 0,
       selfPromotion: data.selfPromotion || null,
-      communityBonus: communityPostBonus ? communityPostBonus.type : null
+      communityBonus: communityPostBonus ? communityPostBonus.type : null,
+      score: videoScore
     };
 
     setCommunityPostBonus(null);
@@ -1146,6 +1221,18 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
         customMultiplier *= 1.25;
       }
 
+      // 1. Hardware/Equipment multiplier views
+      const webcam = upgrades.find(u => u.id === 'webcam')?.level || 0;
+      const mic = upgrades.find(u => u.id === 'mic')?.level || 0;
+      const pc = upgrades.find(u => u.id === 'pc')?.level || 0;
+      
+      let equipmentMulti = 1 + (webcam * 0.10) + (mic * 0.15) + (pc * 0.20);
+      customMultiplier *= equipmentMulti;
+
+      // 2. Video Score reach multiplier
+      const scoreMultiplier = 0.5 + (video.score || 5) * 0.15;
+      customMultiplier *= scoreMultiplier;
+
       const generatedViews = Math.floor(baseViews * categoryMultipliers[video.category] * promoMultiplier * performanceFactor * housing.viewMultiplier * promotionalPenalty * customMultiplier);
 
       let baseRPM = 0.5;
@@ -1155,7 +1242,11 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
       else baseRPM = 0.5 + (subscribers / 1000) * 1.0;
 
       const generatedEarnings = (generatedViews / 1000) * baseRPM;
-      const generatedSubs = Math.floor(generatedViews * 0.02 * subMultiplier);
+
+      // 3. Oratória (storytelling course) sub gain multiplier
+      const oratoria = courses.storytelling || 0;
+      const skillSubMultiplier = 1 + (oratoria * 0.15);
+      const generatedSubs = Math.floor(generatedViews * 0.02 * subMultiplier * skillSubMultiplier);
 
       weekTotalViews += generatedViews;
       weekTotalSubs += generatedSubs;
@@ -1587,6 +1678,60 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const buyCourseSemester = (courseId: string) => {
+    const course = COURSES_INFO.find(c => c.id === courseId);
+    if (!course) return;
+
+    const currentLevel = courses[courseId] || 0;
+    if (currentLevel >= 4) {
+      alert("Você já está formado neste curso! 🎓");
+      return;
+    }
+
+    const price = course.semesterPrices[currentLevel];
+    if (money >= price) {
+      setMoney(prev => prev - price);
+      setCourses(prev => ({
+        ...prev,
+        [courseId]: currentLevel + 1
+      }));
+      
+      if (currentLevel === 3) {
+        alert(`Parabéns! Você se formou no curso: ${course.name}! 🎓`);
+      } else {
+        alert(`Matrícula confirmada! Você concluiu o Semestre ${currentLevel + 1} de ${course.name}! 📚`);
+      }
+    } else {
+      alert("Saldo insuficiente na conta pessoal (PF)!");
+    }
+  };
+
+  const buyLuxuryAsset = (assetId: string) => {
+    const asset = LUXURY_ASSETS.find(a => a.id === assetId);
+    if (!asset) return;
+
+    if (luxuryAssets.includes(assetId)) {
+      alert("Você já adquiriu este patrimônio!");
+      return;
+    }
+
+    if (money >= asset.price) {
+      setMoney(prev => prev - asset.price);
+      setLuxuryAssets(prev => [...prev, assetId]);
+      alert(`Parabéns! Você adquiriu o patrimônio: ${asset.name}! ${asset.icon}`);
+    } else {
+      alert("Saldo de caixa livre insuficiente para adquirir este patrimônio!");
+    }
+  };
+
+  const getNetWorth = () => {
+    const assetsVal = luxuryAssets.reduce((sum, assetId) => {
+      const asset = LUXURY_ASSETS.find(a => a.id === assetId);
+      return sum + (asset ? asset.price : 0);
+    }, 0);
+    return money + assetsVal;
+  };
+
   const workOutside = (id: string) => {
     const work = OUTSIDE_WORKS.find(w => w.id === id);
     if (!work) return;
@@ -1643,6 +1788,11 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
       communityPostBonus,
       updateChannelProfile,
       makeCommunityPost,
+      courses,
+      luxuryAssets,
+      netWorth: getNetWorth(),
+      buyCourseSemester,
+      buyLuxuryAsset,
       
       // PJ Holdings & Web3 Operations
       foundCompany,

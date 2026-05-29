@@ -282,6 +282,8 @@ const Channel: React.FC = () => {
                                 <span>👁️ {formatNumber(video.views)} views</span>
                                 <span>•</span>
                                 <span>{getTimeAgo(video.date)}</span>
+                                <span>•</span>
+                                <span style={{ color: '#fbbf24', fontWeight: 'bold' }}>⭐ {video.score ? video.score.toFixed(1) : '5.0'}/10</span>
                               </div>
 
                               <div className="sv-stats-ledger">
