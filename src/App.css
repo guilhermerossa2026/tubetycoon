@@ -30,10 +30,17 @@
   gap: 6px;
 }
 
-.date-display {
-  font-size: 0.85rem;
-  font-weight: bold;
+.header-pill {
+  background: #1c1c1c;
+  padding: 4px 10px;
+  border-radius: 15px;
+  border: 1px solid #333;
+  font-size: 0.75rem;
+  font-weight: 800;
   color: var(--accent);
+  text-align: center;
+  align-self: flex-start;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.5);
 }
 
 .energy-bar-container {
@@ -70,40 +77,90 @@
 }
 
 .next-week-btn {
-  background: #4caf50;
+  background: linear-gradient(135deg, #2ecc71, #27ae60);
   color: white;
   border: none;
-  padding: 8px 12px;
-  border-radius: 6px;
-  font-weight: bold;
-  font-size: 0.75rem;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-weight: 800;
+  font-size: 0.85rem;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   white-space: nowrap;
+  box-shadow: 0 4px 15px rgba(46, 204, 113, 0.25);
 }
 
 .next-week-btn:hover {
-  background: #45a049;
-  transform: scale(1.05);
+  background: linear-gradient(135deg, #2cfc7d, #2ecc71);
+  box-shadow: 0 6px 20px rgba(46, 204, 113, 0.4);
+  transform: scale(1.04) translateY(-1px);
 }
 
 .next-week-btn:active {
-  transform: scale(0.95);
+  transform: scale(0.96) translateY(1px);
+  box-shadow: 0 2px 8px rgba(46, 204, 113, 0.15);
 }
 
-.stat {
+/* Header stats center panel */
+.header-stats-center {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 15px;
 }
 
-.stat .icon {
+.header-stat-card {
+  background: #121212;
+  border: 1px solid #252525;
+  padding: 6px 14px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+  transition: all 0.25s ease;
+}
+
+.header-stat-card:hover {
+  border-color: #444;
+  transform: translateY(-1px);
+}
+
+.sub-card {
+  border-left: 3px solid #ff3b30;
+}
+
+.cash-card {
+  border-left: 3px solid #4cd964;
+}
+
+.networth-card {
+  border-left: 3px solid #007aff;
+}
+
+.icon-badge {
   font-size: 1.2rem;
 }
 
-.stat .value {
+.stat-desc {
+  display: flex;
+  flex-direction: column;
+}
+
+.stat-lbl {
+  font-size: 0.65rem;
+  color: #888;
+  text-transform: uppercase;
   font-weight: bold;
-  font-size: 1.1rem;
+  letter-spacing: 0.5px;
+  line-height: 1;
+  margin-bottom: 2px;
+}
+
+.header-stat-card .value {
+  font-weight: 900;
+  font-size: 1rem;
+  color: #fff;
+  line-height: 1.1;
 }
 
 .content {

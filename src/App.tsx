@@ -12,7 +12,7 @@ import './App.css';
 
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'create' | 'channel' | 'ranking' | 'shop' | 'investments' | 'agency' | 'housing'>('create');
-  const { money, subscribers, energy, maxEnergy, date, nextWeek, currentHousingId } = useGame();
+  const { money, subscribers, energy, maxEnergy, date, nextWeek, currentHousingId, netWorth } = useGame();
 
   const isAgencyUnlocked = true; // TEMPORÁRIO PARA TESTES
 
@@ -35,7 +35,7 @@ const App: React.FC = () => {
       <div className="titlebar-drag-region"></div>
       <header className="header">
         <div className="header-left">
-          <div className="date-display">📅 {date}</div>
+          <div className="header-pill date-pill">📅 {date}</div>
           <div className="energy-bar-container">
             <span className="icon">⚡</span>
             <div className="energy-bg">
@@ -45,13 +45,35 @@ const App: React.FC = () => {
           </div>
         </div>
         
-        <div className="header-right">
-          <div className="stat">
-            <span className="icon">💰</span>
-            <span className="value">${formatNumber(money)}</span>
+        <div className="header-stats-center">
+          <div className="header-stat-card sub-card">
+            <span className="icon-badge">🔴</span>
+            <div className="stat-desc">
+              <span className="stat-lbl">Inscritos</span>
+              <span className="value">{formatNumber(subscribers)}</span>
+            </div>
           </div>
+          
+          <div className="header-stat-card cash-card">
+            <span className="icon-badge">💰</span>
+            <div className="stat-desc">
+              <span className="stat-lbl">Caixa PF</span>
+              <span className="value">${formatNumber(money)}</span>
+            </div>
+          </div>
+          
+          <div className="header-stat-card networth-card">
+            <span className="icon-badge">💎</span>
+            <div className="stat-desc">
+              <span className="stat-lbl">Fortuna</span>
+              <span className="value">${formatNumber(netWorth)}</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="header-right">
           <button className="next-week-btn" onClick={nextWeek}>
-            PASSAR SEMANA ⏩
+            AVANÇAR SEMANA ⏩
           </button>
         </div>
       </header>
