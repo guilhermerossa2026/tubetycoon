@@ -35,7 +35,8 @@ const Company: React.FC = () => {
 
   // Foundation modal / state
   const [foundingNiche, setFoundingNiche] = useState<string | null>(null);
-  const [compName, setCompName] = useState('');
+  const [brandNameInput, setBrandNameInput] = useState('');
+  const [agencyNameInput, setAgencyNameInput] = useState('');
   const [taxRegime, setTaxRegime] = useState<'real' | 'simples'>('simples');
 
   // Input states for injections/withdrawals
@@ -142,10 +143,18 @@ const Company: React.FC = () => {
 
       {/* Main Tab Navigation */}
       <nav className="holding-nav">
-        <button className={subTab === 'brands' ? 'active' : ''} onClick={() => setSubTab('brands')}>🏢 Minhas Empresas</button>
-        <button className={subTab === 'bank' ? 'active' : ''} onClick={() => setSubTab('bank')}>🏦 Portal do Banco</button>
-        <button className={subTab === 'agency' ? 'active' : ''} onClick={() => setSubTab('agency')}>🤝 Agência & Collabs</button>
-        <button className={subTab === 'crypto' ? 'active' : ''} onClick={() => setSubTab('crypto')}>🪙 Criptomoeda Token</button>
+        <button className={subTab === 'brands' ? 'active' : ''} onClick={() => setSubTab('brands')}>
+          🏢 Minhas Empresas ({companies.filter(c => c.founded).length}/{companies.length})
+        </button>
+        <button className={subTab === 'bank' ? 'active' : ''} onClick={() => setSubTab('bank')}>
+          🏦 Portal do Banco {companies.some(c => c.founded && c.money < 0) ? '⚠️' : ''}
+        </button>
+        <button className={subTab === 'agency' ? 'active' : ''} onClick={() => setSubTab('agency')}>
+          🤝 Agência & Collabs {agency.exists ? `(${agency.talents.length})` : ''}
+        </button>
+        <button className={subTab === 'crypto' ? 'active' : ''} onClick={() => setSubTab('crypto')}>
+          🪙 Token Web3 {cryptoToken ? `(${cryptoToken.symbol})` : ''}
+        </button>
       </nav>
 
       {/* SUB-TAB CONTENTS */}
@@ -182,7 +191,7 @@ const Company: React.FC = () => {
                       disabled={!canFund}
                       onClick={() => {
                         setFoundingNiche(comp.id);
-                        setCompName(`Empresa de ${scheme.nicheName}`);
+                        setBrandNameInput(`Empresa de ${scheme.nicheName}`);
                       }}
                     >
                       Fundar Marca
@@ -595,11 +604,11 @@ const Company: React.FC = () => {
                     <input 
                       type="text" 
                       placeholder="Ex: Hype Creators Agency" 
-                      value={compName} 
-                      onChange={(e) => setCompName(e.target.value)} 
+                      value={agencyNameInput} 
+                      onChange={(e) => setAgencyNameInput(e.target.value)} 
                     />
                     <button 
-                      onClick={() => compName && createAgency(compName)}
+                      onClick={() => agencyNameInput && createAgency(agencyNameInput)}
                       disabled={subscribers < 50000 || money < 30000}
                     >
                       Fundar Agência
@@ -870,8 +879,8 @@ const Company: React.FC = () => {
                 <label>Nome Corporativo da Empresa:</label>
                 <input 
                   type="text" 
-                  value={compName} 
-                  onChange={(e) => setCompName(e.target.value)} 
+                  value={brandNameInput} 
+                  onChange={(e) => setBrandNameInput(e.target.value)} 
                   placeholder="Nome fantasia"
                 />
               </div>
@@ -900,8 +909,8 @@ const Company: React.FC = () => {
             <div className="found-modal-actions">
               <button className="cancel-found-btn" onClick={() => setFoundingNiche(null)}>Cancelar</button>
               <button className="confirm-found-btn" onClick={() => {
-                if (compName) {
-                  foundCompany(foundingNiche as any, compName, taxRegime);
+                if (brandNameInput) {
+                  foundCompany(foundingNiche as any, brandNameInput, taxRegime);
                   setFoundingNiche(null);
                   alert("Empresa fundada com sucesso!");
                 }
@@ -1169,6 +1178,7 @@ const Company: React.FC = () => {
         }
 
         /* Founded brands color-tints */
+        .niche-startup { border-left: 6px solid #9b59b6; }
         .niche-merch { border-left: 6px solid #ff3b30; }
         .niche-candy { border-left: 6px solid #ff9500; }
         .niche-food { border-left: 6px solid #4cd964; }

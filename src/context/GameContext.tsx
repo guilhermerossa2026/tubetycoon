@@ -142,9 +142,9 @@ export interface ProductLicense {
 }
 
 export interface CompanyState {
-  id: 'merch' | 'candy' | 'food' | 'tech';
+  id: 'startup' | 'merch' | 'candy' | 'food' | 'tech';
   name: string;
-  niche: 'merch' | 'candy' | 'food' | 'tech';
+  niche: 'startup' | 'merch' | 'candy' | 'food' | 'tech';
   founded: boolean;
   money: number;
   weeklyMaintenance: number;
@@ -248,7 +248,7 @@ export interface GameContextType extends GameState {
   buyLuxuryAsset: (assetId: string) => void;
   
   // PJ Holdings & Web3 Operations
-  foundCompany: (niche: 'merch' | 'candy' | 'food' | 'tech', name: string, taxRegime: 'real' | 'simples') => void;
+  foundCompany: (niche: 'startup' | 'merch' | 'candy' | 'food' | 'tech', name: string, taxRegime: 'real' | 'simples') => void;
   buyLicense: (companyId: string, licenseId: string) => void;
   buyStock: (companyId: string, productId: string, batchSize: number) => void;
   injectPJCapital: (companyId: string, amount: number) => void;
@@ -304,6 +304,33 @@ export interface GameState {
 // --- STATIC CONFIGURATIONS ---
 
 export const COMPANY_SCHEMES = {
+  startup: {
+    nicheName: "Produtora & Estúdio Digital",
+    foundationCost: 10000,
+    maintenance: 100,
+    unlockedAtSubs: 15000,
+    licenses: [
+      {
+        id: 'social_media',
+        name: 'Licença de Mídias Sociais',
+        cost: 3000,
+        products: [
+          { id: 'post', name: 'Post Patrocinado', insumoCost: 2.00, price: 19.99, emoji: '📱' },
+          { id: 'banner', name: 'Design de Banner', insumoCost: 3.00, price: 29.99, emoji: '🎨' }
+        ]
+      },
+      {
+        id: 'podcast_prod',
+        name: 'Licença de Podcast & Áudio',
+        cost: 6000,
+        products: [
+          { id: 'audio', name: 'Gravação de Áudio Pro', insumoCost: 8.00, price: 79.99, emoji: '🎙️' },
+          { id: 'script', name: 'Roteiro Customizado', insumoCost: 10.00, price: 99.99, emoji: '📝' }
+        ]
+      }
+    ],
+    basicProduct: { id: 'edicao_video', name: 'Edição de Vídeo Terceirizada', insumoCost: 5.00, price: 39.99, emoji: '💻' }
+  },
   merch: {
     nicheName: "Grife de Roupas",
     foundationCost: 50000,
@@ -545,6 +572,29 @@ const INITIAL_AGENCY: AgencyState = {
 
 const INITIAL_COMPANIES: CompanyState[] = [
   {
+    id: 'startup',
+    name: 'Minha Produtora Digital',
+    niche: 'startup',
+    founded: false,
+    money: 0,
+    weeklyMaintenance: 100,
+    taxRegime: 'simples',
+    licenses: [],
+    products: [],
+    weeklyNegativeCount: 0,
+    isBankrupt: false,
+    totalRevenue: 0,
+    activeInstallments: 0,
+    installmentValue: 0,
+    creditScore: 500,
+    maxLoanLimit: 10000,
+    activeLoan: null,
+    web3PayEnabled: false,
+    marketingCampaignCooldown: 0,
+    marketingActive: 'none',
+    marketingWeeksRemaining: 0
+  },
+  {
     id: 'merch',
     name: 'Minha Grife de Roupas',
     niche: 'merch',
@@ -742,7 +792,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // --- BUSINESS CORE ACTIONS ---
 
-  const foundCompany = (niche: 'merch' | 'candy' | 'food' | 'tech', name: string, taxRegime: 'real' | 'simples') => {
+  const foundCompany = (niche: 'startup' | 'merch' | 'candy' | 'food' | 'tech', name: string, taxRegime: 'real' | 'simples') => {
     const scheme = COMPANY_SCHEMES[niche];
     if (money < scheme.foundationCost) {
       alert("Saldo pessoal PF insuficiente para pagar o custo de fundação!");
@@ -1515,7 +1565,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       totalCompanyEarnings += compNetProfit;
 
-      const compColor = comp.id === 'merch' ? '#ff3b30' : comp.id === 'candy' ? '#ff9500' : comp.id === 'food' ? '#4cd964' : '#007aff';
+      const compColor = comp.id === 'startup' ? '#9b59b6' : comp.id === 'merch' ? '#ff3b30' : comp.id === 'candy' ? '#ff9500' : comp.id === 'food' ? '#4cd964' : '#007aff';
       dreDataList.push({
         name: comp.name,
         revenue: companyRevenue,
